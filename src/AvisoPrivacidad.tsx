@@ -1,0 +1,45 @@
+import { useState } from "react";
+import { Title, useGetOne, useDataProvider, useNotify } from "react-admin";
+import { Alert, Box, Button, Checkbox, FormControlLabel, Typography } from "@mui/material";
+
+export const AvisoPrivacidad = () => {
+  // NUEVO: useGetOne pide un único registro, aquí el aviso vigente aprobado por ISSSTE.
+  const { data: aviso, isPending, error } = useGetOne("avisos_privacidad", { id: "vigente" });
+  const provider = useDataProvider();
+  const notify = useNotify();
+  const [acepta, setAcepta] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [versionAceptada, setVersionAceptada] = useState<string | null>(null);
+  const version = aviso ? JSON.stringify([aviso.id, aviso.version]) : "";
+
+  const guardar = async () => {
+    if (!aviso?.texto || !aviso.version || !acepta || guardando) return;
+    setGuardando(true);
+    try {
+      // NUEVO: create puede usarse directamente; la API asignará el tutor desde su sesión.
+      await provider.create("consentimientos", { data: { aviso_id: aviso.id, version: aviso.version, aceptado: true } });
+      setVersionAceptada(version);
+      notify("Consentimiento registrado.", { type: "success" });
+    } catch {
+      notify("No se pudo registrar el consentimiento. Inténtalo nuevamente.", { type: "error" });
+    } finally { setGuardando(false); }
+  };
+
+  return (
+    <Box sx={{ p: 2 }}>
+      <Title title="Aviso de privacidad" />
+      <Typography component="h1" variant="h5" gutterBottom>Aviso de privacidad y consentimiento</Typography>
+      <Alert severity="info" sx={{ mb: 2 }}>El texto oficial debe ser proporcionado y aprobado por ISSSTE. Esta pantalla lo obtiene de la API.</Alert>
+      {isPending && <Typography role="status">Cargando aviso…</Typography>}
+      {(error || (!isPending && !aviso?.texto)) && <Alert severity="error">El aviso vigente no está disponible. El consentimiento permanece deshabilitado.</Alert>}
+      {aviso?.texto && <>
+        <Typography gutterBottom>Versión: {aviso.version}</Typography>
+        {/* NUEVO: whiteSpace conserva los saltos del texto sin inyectar HTML. */}
+        <Typography sx={{ whiteSpace: "pre-wrap", my: 2 }}>{aviso.texto}</Typography>
+        <FormControlLabel control={<Checkbox checked={acepta} disabled={guardando || versionAceptada === version} onChange={(e) => setAcepta(e.target.checked)} />} label="He leído el aviso de privacidad y otorgo mi consentimiento" />
+        <Box><Button variant="contained" disabled={!acepta || !aviso.version || guardando || versionAceptada === version} onClick={guardar}>{guardando ? "Guardando…" : "Registrar consentimiento"}</Button></Box>
+        {versionAceptada === version && <Typography role="status" sx={{ mt: 2 }}>Consentimiento registrado para esta versión.</Typography>}
+      </>}
+    </Box>
+  );
+};
