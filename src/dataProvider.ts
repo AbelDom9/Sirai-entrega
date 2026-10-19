@@ -1,8 +1,10 @@
-import simpleRestProvider from "ra-data-simple-rest";
-import { fetchUtils } from "react-admin";
+// Como en frontend/src/dataProvider.ts del repositorio de clase: proveedor json-server.
+import jsonServerProvider from "ra-data-json-server";
+// Como en el ejemplo de clase: las peticiones llevan el token del login.
+import { API_URL, httpClient } from "./sesion";
 import type { DataProvider, Identifier } from "react-admin";
 
-const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+const apiUrl = API_URL;
 
 // NUEVO: un tipo describe el cuerpo que espera el guardado de todo el grupo.
 export type PaseListaPayload = {
@@ -19,10 +21,12 @@ export type SiraiDataProvider = DataProvider & {
 };
 
 export const dataProvider: SiraiDataProvider = {
-  ...simpleRestProvider(apiUrl),
+  // Igual que el profe: jsonServerProvider envía _sort, _order, _start y _end,
+  // y lee el total de registros de la cabecera X-Total-Count.
+  ...jsonServerProvider(apiUrl, httpClient),
   guardarPaseLista: async (datos) => {
     // NUEVO: fetchJson envía JSON y rechaza la promesa si la API devuelve un error.
-    const { json } = await fetchUtils.fetchJson(`${apiUrl}/asistencias/lote`, {
+    const { json } = await httpClient(`${apiUrl}/asistencias/lote`, {
       method: "POST",
       body: JSON.stringify(datos),
     });

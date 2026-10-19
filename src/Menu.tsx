@@ -1,37 +1,24 @@
-// NUEVO: usePermissions consulta lo que devuelve authProvider.getPermissions.
 import { Menu as RAMenu, usePermissions } from "react-admin";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import FamilyRestroomIcon from "@mui/icons-material/FamilyRestroom";
 import PrivacyTipIcon from "@mui/icons-material/PrivacyTip";
+import { esRol, MENU_POR_ROL, tienePermiso } from "./permisos";
 
 export const Menu = () => {
-  // NUEVO: isPending indica que el rol aún está cargando; error indica un fallo.
-  const { permissions, isPending, error } = usePermissions();
-
-  // NUEVO: no mostramos el menú completo mientras se obtiene el rol.
+  const { permissions: rol, isPending, error } = usePermissions();
   if (isPending) return <p role="status">Cargando menú…</p>;
-  if (error) return <p role="alert">No se pudo cargar el menú.</p>;
+  if (error) return <p role="alert">No se pudo consultar el rol.</p>;
 
-  // NUEVO: un if de React elige qué menú mostrar según el rol del usuario.
-  // Es una prueba de interfaz: todavía no protege rutas ni datos de la API.
-  if (permissions === "profesor") {
-    return (
-      <RAMenu>
-        <RAMenu.Item to="/pase-lista" primaryText="Pase de lista" leftIcon={<ChecklistIcon />} />
-        {/* NUEVO: ResourceItem agrega solamente el recurso indicado al menú. */}
-        <RAMenu.ResourceItem name="asistencias" />
-      </RAMenu>
-    );
-  }
-
-  // Los demás usuarios conservan el menú de desarrollo en este primer paso.
   return (
     <RAMenu>
       <RAMenu.DashboardItem />
-      <RAMenu.Item to="/pase-lista" primaryText="Pase de lista" leftIcon={<ChecklistIcon />} />
-      <RAMenu.Item to="/mis-hijos" primaryText="Asistencia de mis hijos" leftIcon={<FamilyRestroomIcon />} />
-      <RAMenu.Item to="/privacidad" primaryText="Aviso de privacidad" leftIcon={<PrivacyTipIcon />} />
-      <RAMenu.ResourceItems />
+      {/* NUEVO: las rutas propias consultan la misma tabla de permisos que las vistas. */}
+      {tienePermiso(rol, "pase_lista", "show") && <RAMenu.Item to="/pase-lista" primaryText="Pase de lista" leftIcon={<ChecklistIcon />} />}
+      {tienePermiso(rol, "mi_asistencia", "show") && <RAMenu.Item to="/mis-hijos" primaryText="Asistencia de mis hijos" leftIcon={<FamilyRestroomIcon />} />}
+      {tienePermiso(rol, "privacidad", "show") && <RAMenu.Item to="/privacidad" primaryText="Aviso de privacidad" leftIcon={<PrivacyTipIcon />} />}
+      {/* NUEVO: el menú sale de MENU_POR_ROL en permisos.ts, no de condiciones por rol.
+          ResourceItem además consulta canAccess("list") y se oculta si no hay permiso. */}
+      {esRol(rol) && MENU_POR_ROL[rol].map((recurso) => <RAMenu.ResourceItem key={recurso} name={recurso} />)}
     </RAMenu>
   );
 };

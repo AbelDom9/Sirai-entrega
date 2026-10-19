@@ -1,0 +1,43 @@
+# API de SIRAI
+
+Basada en `backend/index.js` del repositorio de clase (TC2007B-421-202624), adaptada de MongoDB a MySQL. En `index.js` los comentarios indican qué es igual al ejemplo ("Como el profe:"), qué es nuevo ("NUEVO:") y qué error del ejemplo se corrigió ("CORRECCIÓN DEL EJEMPLO:").
+
+## Preparación
+
+1. Crear la base con `db/esquema_sirai.sql` (ver README principal).
+2. Crear un usuario de MySQL solo para la API, sin permiso de borrar:
+   ```sql
+   CREATE USER 'sirai_api'@'localhost' IDENTIFIED BY 'una-contraseña';
+   GRANT SELECT, INSERT, UPDATE ON sirai_dev.* TO 'sirai_api'@'localhost';
+   ```
+3. `cp .env.example .env` y completar `DB_PASSWORD` y `LLAVEJWT` (`openssl rand -hex 32`).
+4. `npm install` y `npm start`. Debe imprimir "conectado a la base de datos".
+5. Crear el primer administrador (una sola vez): `node crearAdmin.js`. Pide nombre, correo y contraseña (no se muestra al escribirla). Los demás usuarios los crea el administrador desde la pantalla Usuarios.
+
+## Rutas
+
+Cada recurso tiene `GET /api/recurso` (lista con `_sort`, `_order`, `_start`, `_end` y filtros; `?id=1&id=2` para referencias), `GET /api/recurso/:id`, y `POST`/`PUT` si algún rol puede crear o modificar. Las reglas son las mismas de `src/permisos.ts`, y cada rol solo ve sus filas.
+
+| Recurso | Leer | Crear / modificar | Alcance |
+| --- | --- | --- | --- |
+| estancias, salas | administrador, profesor, doctor/asesor | administrador | profesor: su sala/estancia; doctor: su estancia |
+| infantes | los cuatro | administrador | profesor: su sala; doctor: su estancia; tutor: sus hijos |
+| tutores | administrador, doctor/asesor, tutor | administrador | doctor: tutores de su estancia; tutor: él mismo |
+| infante_tutor, roles | administrador | administrador (roles: solo lectura) | — |
+| usuarios | administrador, doctor/asesor | administrador | doctor: doctores de su estancia. Nunca devuelve password_hash. |
+| estatus_infante | administrador, profesor | — | — |
+| cat_estado_asistencia, motivos_falta | los cuatro | — | — |
+| asistencias | los cuatro | por lote (abajo) | igual que infantes |
+| justificaciones | los cuatro | administrador, tutor | profesor sin `comentario`; tutor solo las suyas y de sus hijos |
+| seguimientos | administrador, doctor/asesor | administrador, doctor/asesor | doctor: su estancia |
+| reportes_asistencia (vista) | administrador | — | filtros desde/hasta y estancia |
+| mi_asistencia (vista) | administrador, tutor | — | tutor: sus hijos |
+
+Rutas propias:
+
+- `POST /api/login`: responde `{ token, id, fullName, rol }`.
+- `POST /api/asistencias/lote`: pase de lista del grupo en una transacción (administrador o el profesor de esa sala). Si se repite, actualiza en lugar de duplicar.
+- `GET /api/avisos_privacidad/vigente` (administrador, tutor) y `POST /api/consentimientos` (tutor; el tutor sale del token).
+- `GET /` y `GET /api/test-db`: comprobación (de la API de Capi).
+
+El token se envía en la cabecera `Authentication`, como en el ejemplo de clase. No hay `DELETE` (baja lógica) ni `/registrarse` (el administrador crea los usuarios).
