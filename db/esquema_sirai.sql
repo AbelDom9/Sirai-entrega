@@ -306,6 +306,65 @@ CREATE TABLE consentimientos (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------------------------
+-- 8. Vistas que usa el frontend
+-- ---------------------------------------------------------------------
+
+-- Recurso "reportes_asistencia" (administrador): cifras por estancia y mes,
+-- SIN nombres ni CURP de infantes (Tabla 14 del reporte).
+-- "retardo" cuenta como asistencia; "falta" como ausencia.
+-- La API aplica los filtros del frontend:
+--   desde/hasta -> sobre fecha_inicio;  estancia_id -> sobre estancia_id.
+CREATE VIEW reportes_asistencia AS
+SELECT
+  CONCAT(e.id, '-', r.periodo)                             AS id,
+  e.id                                                     AS estancia_id,
+  e.nombre                                                 AS estancia_nombre,
+  r.periodo                                                AS periodo,
+  CONCAT(r.periodo, '-01')                                 AS fecha_inicio,
+  COUNT(*)                                                 AS total_registros,
+  SUM(r.codigo IN ('presente', 'retardo'))                 AS presentes,
+  SUM(r.codigo = 'falta')                                  AS ausentes,
+  ROUND(100 * SUM(r.codigo IN ('presente', 'retardo')) / COUNT(*), 1)
+                                                           AS porcentaje_asistencia
+FROM (
+  -- Primero se calcula el mes de cada registro; luego se agrupa.
+  SELECT a.estancia_id, DATE_FORMAT(a.fecha, '%Y-%m') AS periodo, c.codigo
+  FROM asistencias a
+  JOIN cat_estado_asistencia c ON a.estado_id = c.id
+) AS r
+JOIN estancias e ON r.estancia_id = e.id
+GROUP BY e.id, e.nombre, r.periodo;
+
+-- Recurso "mi_asistencia" (tutor): una fila por hijo con su asistencia del
+-- mes actual y el estado de hoy. La API DEBE filtrar con
+--   WHERE tutor_id = <tutor_id del usuario de la sesión>
+-- para que cada tutor vea solo a sus hijos.
+CREATE VIEW mi_asistencia AS
+SELECT
+  i.id                                                     AS id,
+  it.tutor_id                                              AS tutor_id,
+  i.nombre                                                 AS nombre,
+  i.apellidos                                              AS apellidos,
+  s.nombre                                                 AS sala_nombre,
+  DATE_FORMAT(CURDATE(), '%Y-%m')                          AS periodo,
+  (SELECT ROUND(100 * SUM(c.codigo IN ('presente', 'retardo')) / COUNT(*), 1)
+     FROM asistencias a
+     JOIN cat_estado_asistencia c ON a.estado_id = c.id
+    WHERE a.infante_id = i.id
+      AND a.fecha >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+      AND a.fecha <= CURDATE())                            AS porcentaje_asistencia,
+  (SELECT c.nombre
+     FROM asistencias a
+     JOIN cat_estado_asistencia c ON a.estado_id = c.id
+    WHERE a.infante_id = i.id AND a.fecha = CURDATE()
+    ORDER BY a.registrado DESC
+    LIMIT 1)                                               AS estado_hoy
+FROM infantes i
+JOIN infante_tutor it ON it.infante_id = i.id
+JOIN salas s          ON i.sala_id = s.id
+WHERE i.activo = TRUE;
+
+-- ---------------------------------------------------------------------
 -- Consultas de ejemplo
 -- ---------------------------------------------------------------------
 
