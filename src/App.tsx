@@ -1,4 +1,4 @@
-import { Admin, Resource, CustomRoutes } from "react-admin";
+import { Admin, Resource, CustomRoutes, defaultLightTheme } from "react-admin";
 // NUEVO: Route conecta una dirección con una pantalla propia.
 import { Route } from "react-router-dom";
 import polyglotI18nProvider from "ra-i18n-polyglot";
@@ -28,12 +28,37 @@ import spanishMessages from "./spanishMessages";
 
 const i18nProvider = polyglotI18nProvider(() => spanishMessages, "es");
 
+const temaClaro = {
+  ...defaultLightTheme,
+  components: {
+    ...defaultLightTheme.components,
+    RaAppBar: {
+      ...defaultLightTheme.components?.RaAppBar,
+      defaultProps: {
+        ...defaultLightTheme.components?.RaAppBar?.defaultProps,
+        color: "primary" as const,
+      },
+    },
+  },
+  palette: {
+    ...defaultLightTheme.palette,
+    primary: {
+      main: "#611232",
+      contrastText: "#FFFFFF",
+    },
+    background: {
+      ...defaultLightTheme.palette?.background,
+      default: "#EEE6DB",
+    },
+  },
+};
+
 // NUEVO: recordRepresentation define el texto que muestran las referencias al recurso.
 const nombreCompleto = (record: { nombre?: string; apellidos?: string }) =>
   `${record.nombre ?? ""} ${record.apellidos ?? ""}`.trim();
 
 export const App = () => (
-  <Admin title="SIRAI" layout={Layout} dashboard={Dashboard} dataProvider={dataProvider} authProvider={authProvider} i18nProvider={i18nProvider}>
+  <Admin theme={temaClaro} title="SIRAI" layout={Layout} dashboard={Dashboard} dataProvider={dataProvider} authProvider={authProvider} i18nProvider={i18nProvider}>
     {/* Como en test-admin: cada Resource conecta una lista y sus formularios con la API. */}
     <Resource name="infantes" options={{ label: "Infantes" }} list={InfanteList} create={InfanteCreate} edit={InfanteEdit} icon={ChildCareIcon} recordRepresentation={nombreCompleto} />
     <Resource name="estancias" options={{ label: "Estancias" }} list={EstanciaList} create={EstanciaCreate} edit={EstanciaEdit} icon={SchoolIcon} recordRepresentation="nombre" />
