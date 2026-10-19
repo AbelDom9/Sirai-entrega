@@ -1,9 +1,14 @@
-import { List, DataTable, TextInput, Create, Edit, SimpleForm, EditButton, ReferenceInput, ReferenceField, SelectInput, required } from "react-admin";
+import { List, DataTable, TextInput, Create, Edit, SimpleForm, EditButton, ReferenceInput, ReferenceField, SelectInput, required, useCanAccess } from "react-admin";
 import { GuardarToolbar } from "./GuardarToolbar";
 
 const filtros = [<TextInput key="q" source="q" label="Buscar" alwaysOn />];
 
-export const JustificacionList = () => (
+export const JustificacionList = () => {
+  // NUEVO: useCanAccess pregunta a authProvider.canAccess si este rol puede
+  // consultar tutores. El profesor no puede (sin contactos de tutores), así que
+  // la columna Tutor no se muestra en lugar de mostrar un error.
+  const { canAccess: puedeVerTutores } = useCanAccess({ resource: "tutores", action: "list" });
+  return (
   <List filters={filtros} exporter={false}>
     {/* NUEVO: el contenedor permite desplazar la tabla en pantallas pequeñas. */}
     <div style={{ overflowX: "auto" }}>
@@ -11,9 +16,11 @@ export const JustificacionList = () => (
         <DataTable.Col source="asistencia_id" label="Asistencia">
           <ReferenceField source="asistencia_id" reference="asistencias" link={false} />
         </DataTable.Col>
-        <DataTable.Col source="tutor_id" label="Tutor">
-          <ReferenceField source="tutor_id" reference="tutores" link={false} />
-        </DataTable.Col>
+        {puedeVerTutores && (
+          <DataTable.Col source="tutor_id" label="Tutor">
+            <ReferenceField source="tutor_id" reference="tutores" link={false} />
+          </DataTable.Col>
+        )}
         <DataTable.Col source="motivo_id" label="Motivo">
           <ReferenceField source="motivo_id" reference="motivos_falta" link={false} />
         </DataTable.Col>
@@ -22,7 +29,8 @@ export const JustificacionList = () => (
       </DataTable>
     </div>
   </List>
-);
+  );
+};
 
 // NUEVO: un componente de campos compartidos evita duplicar crear y editar.
 const JustificacionInputs = () => (
