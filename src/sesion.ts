@@ -37,8 +37,8 @@ export const httpClient = (url: string, options: fetchUtils.Options = {}) => {
   const headers = new Headers(options.headers);
   headers.set("Accept", "application/json");
   const token = sessionStorage.getItem("auth");
-  // Como en dataProvider.ts del ejemplo de clase: enviamos el token a la API.
-  // NUEVO: usamos el formato estándar Authorization: Bearer; acordarlo con el equipo.
-  if (token) headers.set("Authorization", `Bearer ${token}`);
+  // Como en dataProvider.ts del ejemplo de clase: enviamos el token en la
+  // cabecera "Authentication", que es la que lee api/index.js.
+  if (token) headers.set("Authentication", token);
   return fetchUtils.fetchJson(url, { ...options, headers });
 };

@@ -305,6 +305,17 @@ CREATE TABLE consentimientos (
   UNIQUE KEY (tutor_id, aviso_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Bitácora de la API, como la colección "log" del ejemplo del profesor:
+-- quién (sujeto) hizo qué (accion) sobre qué recurso (objeto).
+CREATE TABLE log (
+  id         INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  timestamp  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  sujeto     VARCHAR(120) NOT NULL,
+  accion     VARCHAR(60)  NOT NULL,
+  objeto     VARCHAR(120) NOT NULL,
+  KEY (timestamp)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ---------------------------------------------------------------------
 -- 8. Vistas que usa el frontend
 -- ---------------------------------------------------------------------

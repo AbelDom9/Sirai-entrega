@@ -2,7 +2,7 @@
 
 # Módulos de SIRAI y conceptos nuevos
 
-Esta etapa prepara pantallas React-admin basadas en el reporte de accesibilidad. El proveedor sigue siendo Simple REST. No se implementó una API ni una base de datos temporal. El login del generador solo sirve para desarrollo. Los recursos de usuarios y roles no aplican autorización por sí mismos.
+Esta etapa prepara pantallas React-admin basadas en el reporte de accesibilidad. El proveedor de datos es ra-data-json-server, como en el ejemplo del profesor (antes era Simple REST). No se implementó una API ni una base de datos temporal. El login del generador solo sirve para desarrollo. Los recursos de usuarios y roles no aplican autorización por sí mismos.
 
 ## Estancias y salas
 
@@ -40,7 +40,7 @@ La pantalla de salas muestra hasta 500 opciones y avisa si existen más; queda p
 
 ## Contrato pendiente de API
 
-Configurar VITE_BACKEND con la dirección real (por ejemplo http://localhost:3000/api). Simple REST envía sort, range y filter como JSON en la consulta. La API devuelve listas como arrays y el total mediante X-Total-Count; CORS debe exponer esa cabecera. Cada registro necesita id. También debe soportar consulta por filtro id para las referencias, GET /recurso/:id, POST y PUT compatibles con el proveedor.
+Configurar VITE_BACKEND con la dirección real (por ejemplo http://localhost:3000/api). ra-data-json-server envía _sort, _order, _start, _end y los filtros como parámetros de la consulta. La API devuelve listas como arrays y el total mediante X-Total-Count; CORS debe exponer esa cabecera. Cada registro necesita id. También debe soportar consulta por filtro id para las referencias, GET /recurso/:id, POST y PUT compatibles con el proveedor.
 
 Recursos: estancias, salas, infantes, tutores, infante_tutor, usuarios, roles, estatus_infante, cat_estado_asistencia, motivos_falta, asistencias, justificaciones, seguimientos, reportes_asistencia, mi_asistencia, avisos_privacidad, consentimientos.
 

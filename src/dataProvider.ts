@@ -1,4 +1,5 @@
-import simpleRestProvider from "ra-data-simple-rest";
+// Como en frontend/src/dataProvider.ts del repositorio de clase: proveedor json-server.
+import jsonServerProvider from "ra-data-json-server";
 // Como en el ejemplo de clase: las peticiones llevan el token del login.
 import { API_URL, httpClient } from "./sesion";
 import type { DataProvider, Identifier } from "react-admin";
@@ -20,9 +21,9 @@ export type SiraiDataProvider = DataProvider & {
 };
 
 export const dataProvider: SiraiDataProvider = {
-  // NUEVO: el tercer parámetro indica en qué cabecera viene el total de registros.
-  // Usamos X-Total-Count, como el backend del ejemplo de clase; la API debe exponerla por CORS.
-  ...simpleRestProvider(apiUrl, httpClient, "X-Total-Count"),
+  // Igual que el profe: jsonServerProvider envía _sort, _order, _start y _end,
+  // y lee el total de registros de la cabecera X-Total-Count.
+  ...jsonServerProvider(apiUrl, httpClient),
   guardarPaseLista: async (datos) => {
     // NUEVO: fetchJson envía JSON y rechaza la promesa si la API devuelve un error.
     const { json } = await httpClient(`${apiUrl}/asistencias/lote`, {
