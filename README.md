@@ -29,3 +29,7 @@ Las pruebas de permisos usan Node.js 22.18 o posterior, o Node 24.
 ## Equipo
 
 Repositorio privado: https://github.com/AbelDom9/sirai-admin. Cada compañero trabaja en su rama y abre un pull request. Compartir package-lock.json; no subir node_modules, dist ni .env. Los comentarios NUEVO: explican conceptos añadidos al tutorial.
+
+## Base de datos
+
+db/esquema_sirai.sql es una propuesta de esquema para el equipo de BD/API: combina los nombres de la API (Capi/Emilio) y del frontend con las ideas del padrón de Pablo (src/scheme_padron.sql), y agrega usuarios con rol. No se ha ejecutado contra un servidor.
