@@ -16,7 +16,7 @@
 --   - No se borra: se usa activo = FALSE (baja lógica).
 --   - No incluye usuarios ni contraseñas de ejemplo.
 --
--- MySQL 8.0.16+ o MariaDB 10.4+. No se ha ejecutado contra un servidor.
+-- MySQL 8.0.16+ o MariaDB 10.4+. Probado en MySQL 8.0.28 (base local sirai_dev, 19 oct 2026).
 -- =====================================================================
 
 SET NAMES utf8mb4;
@@ -47,6 +47,11 @@ CREATE TABLE estatus_infante (
   nombre  VARCHAR(60)  NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+INSERT INTO estatus_infante (codigo, nombre) VALUES
+  ('inscrito',        'Inscrito'),
+  ('baja_temporal',   'Baja temporal'),
+  ('baja_definitiva', 'Baja definitiva');
+
 -- Estados del pase de lista. El frontend busca codigo = 'presente'
 -- para el botón "Todos presentes".
 CREATE TABLE cat_estado_asistencia (
@@ -66,11 +71,25 @@ CREATE TABLE motivos_falta (
   nombre  VARCHAR(100) NOT NULL UNIQUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+INSERT INTO motivos_falta (nombre) VALUES
+  ('Enfermedad en casa'),
+  ('Cita médica'),
+  ('Asunto familiar'),
+  ('Vacaciones'),
+  ('Sin motivo informado');
+
 -- Motivos de baja (de Pablo: motivo_baja).
 CREATE TABLE motivos_baja (
   id           TINYINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   descripcion  VARCHAR(150) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO motivos_baja (descripcion) VALUES
+  ('Cambio de domicilio'),
+  ('Cambio de estancia'),
+  ('Edad máxima cumplida'),
+  ('Decisión de la familia'),
+  ('Otro');
 
 -- ---------------------------------------------------------------------
 -- 2. Estructura institucional
