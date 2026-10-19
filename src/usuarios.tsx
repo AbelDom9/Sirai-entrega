@@ -1,6 +1,6 @@
 import { List, DataTable, TextInput, Create, Edit, SimpleForm, EditButton, ReferenceInput, ReferenceField, SelectInput, required } from "react-admin";
 import { GuardarToolbar } from "./GuardarToolbar";
-import { email } from "react-admin";
+import { email, minLength, PasswordInput } from "react-admin";
 
 const filtros = [<TextInput key="q" source="q" label="Buscar" alwaysOn />];
 
@@ -33,9 +33,16 @@ const UsuarioInputs = () => (
       <SelectInput label="Rol" optionText="nombre" validate={required()} />
     </ReferenceInput>
     <ReferenceInput source="estancia_id" reference="estancias">
-      <SelectInput label="Estancia (si corresponde)" optionText="nombre" />
+      <SelectInput label="Estancia (profesor y doctor/asesor)" optionText="nombre" />
     </ReferenceInput>
-    {/* La creación de credenciales y los permisos se implementarán en la API. */}
+    {/* NUEVO: la API usa sala_id y tutor_id para limitar lo que ve cada rol:
+        el profesor ve solo su sala y el tutor solo a sus hijos. */}
+    <ReferenceInput source="sala_id" reference="salas">
+      <SelectInput label="Sala (solo profesor)" optionText="nombre" />
+    </ReferenceInput>
+    <ReferenceInput source="tutor_id" reference="tutores">
+      <SelectInput label="Tutor vinculado (solo padre/tutor)" />
+    </ReferenceInput>
   </>
 );
 
@@ -44,6 +51,9 @@ export const UsuarioCreate = () => (
     {/* NUEVO: la barra propia solo ofrece guardar; el borrado lógico se hará en la API. */}
     <SimpleForm warnWhenUnsavedChanges toolbar={<GuardarToolbar />}>
       <UsuarioInputs />
+      {/* NUEVO: PasswordInput oculta lo que se escribe. La API la guarda cifrada
+          con argon2 y nunca la devuelve. */}
+      <PasswordInput source="password" label="Contraseña inicial" validate={[required(), minLength(8)]} />
     </SimpleForm>
   </Create>
 );
@@ -53,6 +63,7 @@ export const UsuarioEdit = () => (
     <SimpleForm warnWhenUnsavedChanges toolbar={<GuardarToolbar />}>
       <TextInput source="id" label="ID" disabled />
       <UsuarioInputs />
+      <PasswordInput source="password" label="Nueva contraseña (dejar vacía para no cambiarla)" validate={minLength(8)} />
     </SimpleForm>
   </Edit>
 );

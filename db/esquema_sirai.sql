@@ -331,7 +331,7 @@ SELECT
   e.id                                                     AS estancia_id,
   e.nombre                                                 AS estancia_nombre,
   r.periodo                                                AS periodo,
-  CONCAT(r.periodo, '-01')                                 AS fecha_inicio,
+  CAST(CONCAT(r.periodo, '-01') AS DATE)                   AS fecha_inicio,
   COUNT(*)                                                 AS total_registros,
   SUM(r.codigo IN ('presente', 'retardo'))                 AS presentes,
   SUM(r.codigo = 'falta')                                  AS ausentes,
