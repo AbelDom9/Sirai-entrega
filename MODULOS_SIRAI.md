@@ -1,3 +1,5 @@
+> Actualización: se retiraron el login local y las pruebas de roles. El estado actual de autorización y su conexión pendiente están documentados en ROLES_Y_PERMISOS.md; las menciones al login del generador en este documento corresponden a la primera etapa. La base SQL la desarrolla el equipo de base de datos.
+
 # Módulos de SIRAI y conceptos nuevos
 
 Esta etapa prepara pantallas React-admin basadas en el reporte de accesibilidad. El proveedor sigue siendo Simple REST. No se implementó una API ni una base de datos temporal. El login del generador solo sirve para desarrollo. Los recursos de usuarios y roles no aplican autorización por sí mismos.
@@ -38,7 +40,7 @@ La pantalla de salas muestra hasta 500 opciones y avisa si existen más; queda p
 
 ## Contrato pendiente de API
 
-Configurar VITE_SIMPLE_REST_URL con la dirección real. Simple REST envía sort, range y filter como JSON en la consulta. La API devuelve listas como arrays y el total mediante Content-Range; CORS debe exponer esa cabecera. Cada registro necesita id. También debe soportar consulta por filtro id para las referencias, GET /recurso/:id, POST y PUT compatibles con el proveedor.
+Configurar VITE_BACKEND con la dirección real (por ejemplo http://localhost:3000/api). Simple REST envía sort, range y filter como JSON en la consulta. La API devuelve listas como arrays y el total mediante X-Total-Count; CORS debe exponer esa cabecera. Cada registro necesita id. También debe soportar consulta por filtro id para las referencias, GET /recurso/:id, POST y PUT compatibles con el proveedor.
 
 Recursos: estancias, salas, infantes, tutores, infante_tutor, usuarios, roles, estatus_infante, cat_estado_asistencia, motivos_falta, asistencias, justificaciones, seguimientos, reportes_asistencia, mi_asistencia, avisos_privacidad, consentimientos.
 

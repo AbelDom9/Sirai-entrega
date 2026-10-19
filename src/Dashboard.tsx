@@ -1,8 +1,10 @@
-import { Alert, Card, CardContent, CardHeader, Typography } from "@mui/material";
-import { useGetIdentity } from "react-admin";
+import { Card, CardContent, CardHeader, Typography } from "@mui/material";
+import { useGetIdentity, usePermissions } from "react-admin";
+import { NOMBRES_ROL, esRol } from "./permisos";
 
 export const Dashboard = () => {
   const { data: identity, isPending, error } = useGetIdentity();
+  const { permissions } = usePermissions();
   if (isPending) return <p role="status">Cargando tu información…</p>;
   if (error) return <p role="alert">No se pudo obtener la información de tu usuario.</p>;
   return (
@@ -10,9 +12,8 @@ export const Dashboard = () => {
       <CardHeader title="SIRAI · Registro de asistencia infantil" titleTypographyProps={{ component: "h1", variant: "h5" }} />
       <CardContent>
         <Typography gutterBottom>Bienvenido{identity?.fullName ? `, ${identity.fullName}` : ""}.</Typography>
-        <Typography gutterBottom>Estancias de Bienestar y Desarrollo Infantil del ISSSTE.</Typography>
-        <Typography gutterBottom>Usa el menú para consultar salas, infantes, pase de lista y seguimiento de faltas.</Typography>
-        <Alert severity="info">Etapa de desarrollo: las pantallas requieren nuestra API y base de datos. El inicio de sesión sigue siendo de ejemplo y todos los módulos están visibles; los permisos por rol todavía no están implementados.</Alert>
+        <Typography gutterBottom>Perfil: {esRol(permissions) ? NOMBRES_ROL[permissions] : "Sin rol válido"}</Typography>
+        <Typography>Usa el menú para acceder a las funciones de tu perfil.</Typography>
       </CardContent>
     </Card>
   );

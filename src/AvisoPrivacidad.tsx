@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Title, useGetOne, useDataProvider, useNotify } from "react-admin";
+import { Title, useGetOne, useDataProvider, useNotify, useCanAccess } from "react-admin";
 import { Alert, Box, Button, Checkbox, FormControlLabel, Typography } from "@mui/material";
 
 export const AvisoPrivacidad = () => {
@@ -7,13 +7,15 @@ export const AvisoPrivacidad = () => {
   const { data: aviso, isPending, error } = useGetOne("avisos_privacidad", { id: "vigente" });
   const provider = useDataProvider();
   const notify = useNotify();
+  // NUEVO: ver el aviso no equivale a poder registrar el consentimiento de un tutor.
+  const { canAccess: puedeAceptar } = useCanAccess({ resource: "consentimientos", action: "create" });
   const [acepta, setAcepta] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [versionAceptada, setVersionAceptada] = useState<string | null>(null);
   const version = aviso ? JSON.stringify([aviso.id, aviso.version]) : "";
 
   const guardar = async () => {
-    if (!aviso?.texto || !aviso.version || !acepta || guardando) return;
+    if (!puedeAceptar || !aviso?.texto || !aviso.version || !acepta || guardando) return;
     setGuardando(true);
     try {
       // NUEVO: create puede usarse directamente; la API asignará el tutor desde su sesión.
@@ -36,8 +38,8 @@ export const AvisoPrivacidad = () => {
         <Typography gutterBottom>Versión: {aviso.version}</Typography>
         {/* NUEVO: whiteSpace conserva los saltos del texto sin inyectar HTML. */}
         <Typography sx={{ whiteSpace: "pre-wrap", my: 2 }}>{aviso.texto}</Typography>
-        <FormControlLabel control={<Checkbox checked={acepta} disabled={guardando || versionAceptada === version} onChange={(e) => setAcepta(e.target.checked)} />} label="He leído el aviso de privacidad y otorgo mi consentimiento" />
-        <Box><Button variant="contained" disabled={!acepta || !aviso.version || guardando || versionAceptada === version} onClick={guardar}>{guardando ? "Guardando…" : "Registrar consentimiento"}</Button></Box>
+        <FormControlLabel control={<Checkbox checked={acepta} disabled={!puedeAceptar || guardando || versionAceptada === version} onChange={(e) => setAcepta(e.target.checked)} />} label="He leído el aviso de privacidad y otorgo mi consentimiento" />
+        <Box><Button variant="contained" disabled={!puedeAceptar || !acepta || !aviso.version || guardando || versionAceptada === version} onClick={guardar}>{guardando ? "Guardando…" : "Registrar consentimiento"}</Button></Box>
         {versionAceptada === version && <Typography role="status" sx={{ mt: 2 }}>Consentimiento registrado para esta versión.</Typography>}
       </>}
     </Box>

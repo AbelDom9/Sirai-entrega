@@ -1,55 +1,44 @@
-import { AuthProvider, HttpError } from "react-admin";
-import data from "./users.json";
+import { HttpError } from "react-admin";
+import type { AuthProvider } from "react-admin";
+import { esRol, INICIO_POR_ROL, tienePermiso } from "./permisos";
+import { API_URL, cerrarSesion, httpClient, leerIdentidad } from "./sesion";
 
-/**
- * This authProvider is only for test purposes. Don't use it in production.
- */
+// Basado en frontend/src/Authprovider.ts del repositorio de clase.
+// No hay usuarios ni servidor ficticios. La conexión depende de la API del equipo.
 export const authProvider: AuthProvider = {
-  login: ({ username, password }) => {
-    const user = data.users.find(
-      (u) => u.username === username && u.password === password,
-    );
-
-    if (user) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...userToPersist } = user;
-      localStorage.setItem("user", JSON.stringify(userToPersist));
-      return Promise.resolve();
+  login: async ({ username, password }) => {
+    cerrarSesion();
+    if (!API_URL) throw new Error("Falta configurar VITE_BACKEND con la URL de la API");
+    const { json } = await httpClient(`${API_URL}/login`, {
+      method: "POST", body: JSON.stringify({ username, password }),
+    });
+    const rol: unknown = json?.rol;
+    // NUEVO: ampliamos la respuesta del ejemplo de clase con el código de rol.
+    // No se deduce un rol a partir del nombre de usuario ni de un ID numérico.
+    if (!json || typeof json.token !== "string" || !json.token || !esRol(rol) ||
+        !["string", "number"].includes(typeof json.id)) {
+      throw new Error("La API debe devolver token, id y un código de rol válido");
     }
-
-    return Promise.reject(
-      new HttpError("Acceso denegado", 401, {
-        message: "Usuario o contraseña incorrectos",
-      }),
-    );
+    sessionStorage.setItem("auth", json.token);
+    sessionStorage.setItem("identity", JSON.stringify({ id: json.id, fullName: json.fullName, rol }));
+    // NUEVO: cada rol abre su pantalla de trabajo al iniciar sesión.
+    return { redirectTo: INICIO_POR_ROL[rol] };
   },
-  logout: () => {
-    localStorage.removeItem("user");
-    return Promise.resolve();
-  },
-  checkError: () => Promise.resolve(),
-  checkAuth: () =>
-    localStorage.getItem("user") ? Promise.resolve() : Promise.reject(),
-  // NUEVO: React-admin llama a getPermissions para conocer el rol de la sesión.
-  // login ya guarda el usuario sin contraseña en localStorage, incluido su rol.
-  getPermissions: () => {
-    const persistedUser = localStorage.getItem("user");
-    if (!persistedUser) return Promise.reject(new Error("Se requiere iniciar sesión"));
-
-    // NUEVO: try/catch evita un fallo sin controlar si la sesión no contiene JSON válido.
-    try {
-      const user = JSON.parse(persistedUser);
-      // NUEVO: ?? devuelve null si la sesión antigua todavía no tiene rol.
-      return Promise.resolve(user.rol ?? null);
-    } catch {
-      return Promise.reject(new Error("No se pudo leer el rol del usuario"));
+  logout: async () => { cerrarSesion(); },
+  checkAuth: async () => { leerIdentidad(); },
+  checkError: async ({ status }) => {
+    if (status === 401) {
+      cerrarSesion();
+      throw new HttpError("Tu sesión terminó; vuelve a iniciar sesión", 401);
     }
+    // NUEVO: 403 no cierra la sesión: significa que falta permiso para esa acción.
   },
-  getIdentity: () => {
-    const persistedUser = localStorage.getItem("user");
-    const user = persistedUser ? JSON.parse(persistedUser) : null;
-
-    return Promise.resolve(user);
+  getIdentity: async () => leerIdentidad(),
+  getPermissions: async () => leerIdentidad().rol,
+  // NUEVO: método nativo de React-admin para autorizar vistas y botones CRUD.
+  canAccess: async ({ resource, action }) => {
+    const identidad = leerIdentidad();
+    return tienePermiso(identidad.rol, resource, action);
   },
 };
 

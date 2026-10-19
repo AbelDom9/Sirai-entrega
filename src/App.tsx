@@ -20,6 +20,8 @@ import { ReporteList } from "./reportes";
 import { PaseLista } from "./PaseLista";
 import { MiAsistencia } from "./MiAsistencia";
 import { AvisoPrivacidad } from "./AvisoPrivacidad";
+import { Acceso } from "./Acceso";
+import { RolesPermisos } from "./RolesPermisos";
 import { Layout } from "./Layout";
 import { Dashboard } from "./Dashboard";
 import { dataProvider } from "./dataProvider";
@@ -32,8 +34,9 @@ const i18nProvider = polyglotI18nProvider(() => spanishMessages, "es");
 const nombreCompleto = (record: { nombre?: string; apellidos?: string }) =>
   `${record.nombre ?? ""} ${record.apellidos ?? ""}`.trim();
 
+// NUEVO: requireAuth pide sesión incluso en las rutas propias.
 export const App = () => (
-  <Admin title="SIRAI" layout={Layout} dashboard={Dashboard} dataProvider={dataProvider} authProvider={authProvider} i18nProvider={i18nProvider}>
+  <Admin requireAuth title="SIRAI" layout={Layout} dashboard={Dashboard} dataProvider={dataProvider} authProvider={authProvider} i18nProvider={i18nProvider}>
     {/* Como en test-admin: cada Resource conecta una lista y sus formularios con la API. */}
     <Resource name="infantes" options={{ label: "Infantes" }} list={InfanteList} create={InfanteCreate} edit={InfanteEdit} icon={ChildCareIcon} recordRepresentation={nombreCompleto} />
     <Resource name="estancias" options={{ label: "Estancias" }} list={EstanciaList} create={EstanciaCreate} edit={EstanciaEdit} icon={SchoolIcon} recordRepresentation="nombre" />
@@ -48,13 +51,13 @@ export const App = () => (
     <Resource name="estatus_infante" options={{ label: "Estatus de inscripción" }} list={CatalogoList} recordRepresentation="nombre" />
     <Resource name="cat_estado_asistencia" options={{ label: "Estados de asistencia" }} list={CatalogoList} recordRepresentation="nombre" />
     <Resource name="motivos_falta" options={{ label: "Motivos de falta" }} list={CatalogoList} recordRepresentation="nombre" />
-    <Resource name="roles" options={{ label: "Roles" }} list={CatalogoList} recordRepresentation="nombre" />
-    {/* NUEVO: las rutas personalizadas permiten flujos que no son CRUD estándar. */}
+    <Resource name="roles" options={{ label: "Roles y permisos" }} list={() => <Acceso recurso="roles" accion="list"><RolesPermisos /></Acceso>} recordRepresentation="nombre" />
+    {/* NUEVO: Acceso usa CanAccess de React-admin en las rutas personalizadas. */}
     <CustomRoutes>
       <Route path="/inicio" element={<Dashboard />} />
-      <Route path="/pase-lista" element={<PaseLista />} />
-      <Route path="/mis-hijos" element={<MiAsistencia />} />
-      <Route path="/privacidad" element={<AvisoPrivacidad />} />
+      <Route path="/pase-lista" element={<Acceso recurso="pase_lista" accion="show"><PaseLista /></Acceso>} />
+      <Route path="/mis-hijos" element={<Acceso recurso="mi_asistencia" accion="show"><MiAsistencia /></Acceso>} />
+      <Route path="/privacidad" element={<Acceso recurso="privacidad" accion="show"><AvisoPrivacidad /></Acceso>} />
     </CustomRoutes>
   </Admin>
 );

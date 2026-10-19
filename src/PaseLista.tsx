@@ -1,6 +1,6 @@
 // NUEVO: useState guarda cambios de pantalla; useEffect carga datos al cambiar el grupo.
 import { useEffect, useState } from "react";
-import { useDataProvider, useGetList, useNotify, Title } from "react-admin";
+import { useDataProvider, useGetList, useNotify, Title, useCanAccess } from "react-admin";
 import type { Identifier, RaRecord } from "react-admin";
 import { Alert, Box, Button, Card, CardContent, MenuItem, Stack, TextField, Typography } from "@mui/material";
 import type { SiraiDataProvider } from "./dataProvider";
@@ -19,6 +19,8 @@ export const PaseLista = () => {
   const provider = useDataProvider<SiraiDataProvider>();
   // NUEVO: useNotify muestra avisos de éxito y error en React-admin.
   const notify = useNotify();
+  // NUEVO: el guardado requiere permiso edit además de poder ver la pantalla.
+  const { canAccess: puedeEditar } = useCanAccess({ resource: "pase_lista", action: "edit" });
   const [sala, setSala] = useState("");
   const [fecha, setFecha] = useState(fechaLocal);
   const [turno, setTurno] = useState("matutino");
@@ -83,7 +85,7 @@ export const PaseLista = () => {
     return () => { activo = false; };
   }, [sala, fecha, turno, grupoActual, provider]);
 
-  const listo = !cargando && !guardando && grupoCargado === grupoActual && infantes.length > 0 && !error;
+  const listo = !!puedeEditar && !cargando && !guardando && grupoCargado === grupoActual && infantes.length > 0 && !error;
   const presente = estados.data?.find((estado) => estado.codigo === "presente");
   const seleccionSala = salas.data?.find((item) => String(item.id) === sala);
 
