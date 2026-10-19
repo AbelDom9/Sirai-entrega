@@ -4,7 +4,7 @@
 -- Combina:
 --   - Nombres de la API de Capi/Emilio y del frontend (infantes, salas,
 --     apellidos, fecha_nacimiento, sala_id, activo).
---   - Ideas del padrón de Pablo (src/scheme_padron.sql): CURP única,
+--   - Ideas del padrón de Pablo (db/scheme_padron.sql): CURP única,
 --     baja lógica con fecha y motivo, historial de movimientos y
 --     padrón mensual.
 --   - Lo que faltaba para roles y permisos: roles, usuarios, tutores,

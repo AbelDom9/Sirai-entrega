@@ -32,4 +32,4 @@ Repositorio privado: https://github.com/AbelDom9/sirai-admin. Cada compañero tr
 
 ## Base de datos
 
-db/esquema_sirai.sql es una propuesta de esquema para el equipo de BD/API: combina los nombres de la API (Capi/Emilio) y del frontend con las ideas del padrón de Pablo (src/scheme_padron.sql), y agrega usuarios con rol. Se probó en MySQL 8.0.28 local (base sirai_dev): crea 18 tablas, 28 llaves foráneas y 2 vistas (reportes_asistencia y mi_asistencia).
+db/esquema_sirai.sql es una propuesta de esquema para el equipo de BD/API: combina los nombres de la API (Capi/Emilio) y del frontend con las ideas del padrón de Pablo (db/scheme_padron.sql), y agrega usuarios con rol. Se probó en MySQL 8.0.28 local (base sirai_dev): crea 18 tablas, 28 llaves foráneas y 2 vistas (reportes_asistencia y mi_asistencia).
