@@ -7,8 +7,11 @@ Frontend académico de asistencia infantil del ISSSTE, basado en React y React-a
 ```sh
 npm ci
 cp .env.example .env
+openssl req -x509 -newkey rsa:2048 -nodes -keyout frontend.key -out frontend.crt -days 365 -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
 npm run dev
 ```
+
+Como en el ejemplo de clase, el frontend y la API usan HTTPS con certificados propios (frontend.key/crt aquí y server.key/crt en api/). No se suben a GitHub. La primera vez, el navegador mostrará una advertencia que hay que aceptar.
 
 Configurar VITE_BACKEND con la URL de la API del equipo. No hay cuentas de demostración ni backend temporal. El login necesita la respuesta documentada en [ROLES_Y_PERMISOS.md](ROLES_Y_PERMISOS.md): token, id y rol. Hasta conectar la API no se puede iniciar una sesión real ni cargar datos.
 
