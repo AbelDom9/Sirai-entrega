@@ -8,6 +8,11 @@ export default defineConfig(({ mode }) => ({
   plugins: [react()],
   server: {
     host: true,
+    // WSL no siempre recibe los eventos de archivos editados desde Windows.
+    watch: {
+      usePolling: process.platform === "linux",
+      interval: 500,
+    },
     // Como el ejemplo de clase: frontend.key y frontend.crt se generan con openssl
     // (ver README.md) y no se suben a GitHub.
     https: {

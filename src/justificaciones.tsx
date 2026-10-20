@@ -1,5 +1,6 @@
 import { List, DataTable, TextInput, Create, Edit, SimpleForm, EditButton, ReferenceInput, ReferenceField, SelectInput, required, useCanAccess } from "react-admin";
 import { GuardarToolbar } from "./GuardarToolbar";
+import { AsistenciaOpcion } from "./AsistenciaOpcion";
 
 const filtros = [<TextInput key="q" source="q" label="Buscar" alwaysOn />];
 
@@ -36,7 +37,7 @@ export const JustificacionList = () => {
 const JustificacionInputs = () => (
   <>
     <ReferenceInput source="asistencia_id" reference="asistencias">
-      <SelectInput label="Asistencia" optionText="nombre" validate={required()} />
+      <SelectInput label="Asistencia" optionText={<AsistenciaOpcion />} validate={required()} />
     </ReferenceInput>
     <ReferenceInput source="tutor_id" reference="tutores">
       <SelectInput label="Tutor" optionText="nombre" validate={required()} />

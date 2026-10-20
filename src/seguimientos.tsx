@@ -1,5 +1,6 @@
 import { List, DataTable, TextInput, Create, Edit, SimpleForm, EditButton, ReferenceInput, ReferenceField, SelectInput, required } from "react-admin";
 import { GuardarToolbar } from "./GuardarToolbar";
+import { AsistenciaOpcion } from "./AsistenciaOpcion";
 import { DateInput, DateField, BooleanInput } from "react-admin";
 
 const filtros = [<TextInput key="q" source="q" label="Buscar" alwaysOn />];
@@ -29,7 +30,7 @@ export const SeguimientoList = () => (
 const SeguimientoInputs = () => (
   <>
     <ReferenceInput source="asistencia_id" reference="asistencias">
-      <SelectInput label="Asistencia" optionText="nombre" validate={required()} />
+      <SelectInput label="Asistencia" optionText={<AsistenciaOpcion />} validate={required()} />
     </ReferenceInput>
     <ReferenceInput source="responsable_id" reference="usuarios">
       <SelectInput label="Responsable" optionText="nombre" validate={required()} />
