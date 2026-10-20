@@ -11,8 +11,14 @@ Basada en `backend/index.js` del repositorio de clase (TC2007B-421-202624), adap
    GRANT SELECT, INSERT, UPDATE ON sirai_dev.* TO 'sirai_api'@'localhost';
    ```
 3. `cp .env.example .env` y completar `DB_PASSWORD` y `LLAVEJWT` (`openssl rand -hex 32`).
-4. `npm install` y `npm start`. Debe imprimir "conectado a la base de datos".
-5. Crear el primer administrador (una sola vez): `node crearAdmin.js`. Pide nombre, correo y contraseña (no se muestra al escribirla). Los demás usuarios los crea el administrador desde la pantalla Usuarios.
+4. Generar el certificado HTTPS (como el ejemplo de clase), dentro de `api/`:
+   ```sh
+   openssl req -x509 -newkey rsa:2048 -nodes -keyout server.key -out server.crt -days 365 -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
+   ```
+   `server.key` y `server.crt` no se suben a GitHub.
+5. `npm install` y `npm start`. Debe imprimir "conectado a la base de datos" y "HTTPS Server running on port 3000".
+   Como el certificado es propio (autofirmado), abre una vez https://localhost:3000 en el navegador y acepta la advertencia; si no, el frontend no podrá conectarse.
+6. Crear el primer administrador (una sola vez): `node crearAdmin.js`. Pide nombre, correo y contraseña (no se muestra al escribirla). Los demás usuarios los crea el administrador desde la pantalla Usuarios.
 
 ## Rutas
 
@@ -38,6 +44,6 @@ Rutas propias:
 - `POST /api/login`: responde `{ token, id, fullName, rol }`.
 - `POST /api/asistencias/lote`: pase de lista del grupo en una transacción (administrador o el profesor de esa sala). Si se repite, actualiza en lugar de duplicar.
 - `GET /api/avisos_privacidad/vigente` (administrador, tutor) y `POST /api/consentimientos` (tutor; el tutor sale del token).
-- `GET /` y `GET /api/test-db`: comprobación (de la API de Capi).
+- `GET /`: comprobación pública (solo responde un texto). `GET /api/test-db`: comprobación de la base, solo con token de administrador.
 
 El token se envía en la cabecera `Authentication`, como en el ejemplo de clase. No hay `DELETE` (baja lógica) ni `/registrarse` (el administrador crea los usuarios).

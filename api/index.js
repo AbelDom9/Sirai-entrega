@@ -17,6 +17,10 @@ var cors=require("cors")
 const bodyParser=require("body-parser")
 const argon2=require("argon2")
 const jwt=require("jsonwebtoken")
+// Como el profe (commit "Agregado https"): fs lee los archivos del certificado
+// y https crea el servidor cifrado.
+const fs=require("fs");
+const https = require('https');
 
 const app=express();
 let db;
@@ -526,13 +530,16 @@ app.get("/", (req, res)=>{
 });
 
 // De la API de Capi: comprobar la conexión con la base de datos.
+// CORRECCIÓN: antes era pública y cualquiera podía ver el nombre de la base.
+// Ahora pide token (como las demás rutas) y solo la usa el administrador.
 app.get("/api/test-db", async (req, res)=>{
 	try{
+		let usuario=leerToken(req);
+		exigirRol(usuario, ["administrador"]);
 		let [resultado]=await db.query("SELECT DATABASE() AS base_de_datos");
 		res.json({mensaje: "Conexión exitosa", base_de_datos: resultado[0].base_de_datos});
 	}catch(error){
-		console.error(error.message);
-		res.status(500).json({mensaje: "Error al conectar con la base de datos"});
+		responderError(error, res);
 	}
 });
 
@@ -755,11 +762,23 @@ app.post("/api/login", async (req, res)=>{
 	}
 })
 
-// Como el profe (su bloque comentado): servidor HTTP.
-// El profe también tiene una versión HTTPS con server.key y server.crt;
-// la activaremos cuando generemos el certificado.
+// Como el profe: servidor HTTPS con server.key y server.crt.
+// HTTPS cifra el token y las contraseñas mientras viajan por la red.
+// Los archivos se generan con openssl (ver api/README.md) y no se suben a GitHub.
+const options = {
+	key: fs.readFileSync('server.key'),
+	cert: fs.readFileSync('server.crt')
+};
+
+https.createServer(options, app).listen(PORT, async () => {
+	await process.loadEnvFile(".env");
+	await connectToDB();
+	console.log('HTTPS Server running on port 3000');
+});
+
+/* Como el profe: versión HTTP, solo para pruebas sin certificado.
 app.listen(PORT, async ()=>{
 	await process.loadEnvFile(".env")
 	await connectToDB();
 	console.log("aplicacion iniciada en puerto 3000")
-});
+});*/

@@ -29,6 +29,7 @@ dist-ssr
 !.env.example
 *.pem
 *.key
+*.crt
 *.tsbuildinfo
 
 # Script local de diagnóstico
