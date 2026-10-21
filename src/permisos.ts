@@ -19,7 +19,7 @@ export const RECURSOS = {
   reportes_asistencia: "Reportes agregados", estatus_infante: "Estatus de inscripción",
   cat_estado_asistencia: "Estados de asistencia", motivos_falta: "Motivos de falta",
   pase_lista: "Pase de lista", mi_asistencia: "Asistencia de mis hijos",
-  bandeja_seguimientos: "Bandeja de faltas",
+  bandeja_seguimientos: "Bandeja de faltas", alta_pendiente: "Alta médica pendiente",
   privacidad: "Aviso de privacidad", consentimientos: "Consentimiento",
 };
 
@@ -46,12 +46,15 @@ export const PERMISOS: Record<Rol, Record<string, readonly string[]>> = {
     estatus_infante: ["list", "show"],
     cat_estado_asistencia: ["list", "show"], motivos_falta: ["list", "show"],
     pase_lista: ["show", "edit"], mi_asistencia: ["show"], privacidad: ["show"],
+    alta_pendiente: ["list"],
   },
   profesor: {
     // Sala y catálogos se consultan para mostrar los nombres en el pase de lista.
     estancias: ["list", "show"], salas: ["list", "show"], infantes: ["list", "show"],
     estatus_infante: ["list", "show"], cat_estado_asistencia: ["list", "show"],
     motivos_falta: ["list", "show"], pase_lista: ["show", "edit"],
+    // Para avisar en el pase de lista qué niños requieren alta (RF-27).
+    alta_pendiente: ["list"],
     asistencias: ["list", "show"], justificaciones: ["list", "show"],
   },
   doctor_asesor: {
@@ -64,6 +67,7 @@ export const PERMISOS: Record<Rol, Record<string, readonly string[]>> = {
     pase_lista: ["show", "edit"],
     // Bandeja del día con contactos del tutor (RF-21). Solo el doctor/asesor.
     bandeja_seguimientos: ["list"],
+    alta_pendiente: ["list"],
   },
   tutor: {
     infantes: ["list", "show"], tutores: ["list", "show"],

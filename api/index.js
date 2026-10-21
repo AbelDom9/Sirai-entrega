@@ -332,6 +332,14 @@ const seguimientos={
 				throw errorHttp(403);
 			}
 		}
+		// NUEVO (RN-04): "Enfermedad en casa" y "Accidente fuera de la estancia"
+		// activan siempre "requiere alta", aunque el formulario diga que no.
+		if(valores.motivo_id!==undefined && valores.motivo_id!==null){
+			let [motivos]=await db.query("SELECT codigo FROM motivos_falta WHERE id = ?", [valores.motivo_id]);
+			if(motivos.length>0 && MOTIVOS_REQUIEREN_ALTA.includes(motivos[0].codigo)){
+				valores.requiere_alta=1;
+			}
+		}
 	}
 };
 
@@ -347,6 +355,29 @@ const reportes_asistencia={
 	crear: [],
 	modificar: [],
 	alcance: ()=>sinFiltro
+};
+
+// NUEVO: causas que obligan a presentar alta médica para volver (RN-04).
+const MOTIVOS_REQUIEREN_ALTA=["ENF_CASA", "ACC_EXT"];
+
+// NUEVO: estados que significan que el niño entró a la estancia. Un niño con
+// alta pendiente no puede guardarse con ninguno de ellos (RF-27).
+const ESTADOS_ENTRADA=["presente", "filtro_salud"];
+
+// NUEVO: vista del esquema con los niños que tienen alta médica pendiente.
+// Solo de lectura; el profesor la usa en el pase de lista para avisar.
+const alta_pendiente={
+	tabla: "alta_pendiente",
+	columnas: ["id", "infante_id", "sala_id", "estancia_id"],
+	busqueda: [],
+	leer: ["administrador", "profesor", "doctor_asesor"],
+	crear: [],
+	modificar: [],
+	alcance: (usuario)=>{
+		if(usuario.rol=="administrador") return sinFiltro;
+		if(usuario.rol=="profesor") return {sql: "sala_id = ?", valores: [usuario.sala_id]};
+		return {sql: "estancia_id = ?", valores: [usuario.estancia_id]};
+	}
 };
 
 // NUEVO: vista del esquema con los seguimientos listos para atender (RF-21 y RF-22):
@@ -761,6 +792,28 @@ app.post("/api/asistencias/lote", async (req, res)=>{
 		if(ninos.length!=new Set(ids.map(String)).size){
 			throw errorHttp(400);
 		}
+		// NUEVO (RF-27): un niño con alta médica pendiente no puede guardarse como
+		// Presente ni Filtro de salud. Si pasa, no se guarda nada y se dice quién es.
+		let [estadosEntrada]=await db.query("SELECT id FROM cat_estado_asistencia WHERE codigo IN (?)", [ESTADOS_ENTRADA]);
+		let idsEntrada=estadosEntrada.map((estado)=>Number(estado.id));
+		let ninosQueEntran=[];
+		for(let registro of registros){
+			if(idsEntrada.includes(Number(registro.estado_id))){
+				ninosQueEntran.push(registro.infante_id);
+			}
+		}
+		if(ninosQueEntran.length>0){
+			let [bloqueados]=await db.query(
+				"SELECT DISTINCT CONCAT(i.nombre, ' ', i.apellidos) AS nombre FROM alta_pendiente ap "+
+				"JOIN infantes i ON i.id = ap.infante_id WHERE ap.infante_id IN (?)",
+				[ninosQueEntran]
+			);
+			if(bloqueados.length>0){
+				let nombres=bloqueados.map((fila)=>fila.nombre).join(", ");
+				res.status(409).json({message: nombres+" requiere alta médica para entrar"});
+				return;
+			}
+		}
 		await log(usuario.usuario, "pase de lista", "/asistencias/lote sala "+sala_id+" "+fecha+" "+turno);
 		// NUEVO: getConnection toma una conexión del pool para la transacción.
 		conexion=await db.getConnection();
@@ -846,6 +899,7 @@ registrarRutas("seguimientos", seguimientos);
 registrarRutas("reportes_asistencia", reportes_asistencia);
 registrarRutas("mi_asistencia", mi_asistencia);
 registrarRutas("bandeja_seguimientos", bandeja_seguimientos);
+registrarRutas("alta_pendiente", alta_pendiente);
 
 // NUEVO: no hay rutas DELETE. El profe borraba registros; en SIRAI se usa baja
 // lógica (activo = FALSE) y nadie tiene permiso "delete" en src/permisos.ts.

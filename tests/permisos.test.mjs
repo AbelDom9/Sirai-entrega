@@ -27,6 +27,14 @@ test("doctor: seguimiento y contacto, sin administrar usuarios ni permisos", () 
   }
 });
 
+test("alta pendiente: la consultan quienes pasan lista, nunca el tutor", () => {
+  for (const rol of ["administrador", "profesor", "doctor_asesor"]) {
+    assert.equal(tienePermiso(rol, "alta_pendiente", "list"), true);
+    assert.equal(tienePermiso(rol, "alta_pendiente", "edit"), false);
+  }
+  assert.equal(tienePermiso("tutor", "alta_pendiente", "list"), false);
+});
+
 test("tutor: justificación y consentimiento, sin gestión institucional", () => {
   assert.equal(tienePermiso("tutor", "mi_asistencia", "show"), true);
   assert.equal(tienePermiso("tutor", "justificaciones", "create"), true);
