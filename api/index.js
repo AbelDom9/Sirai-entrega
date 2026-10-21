@@ -316,6 +316,15 @@ const justificaciones={
 				}
 			}
 		}
+	},
+	// NUEVO: al justificar una falta injustificada, pasa a "Falta justificada".
+	// Se ejecuta después de guardar la justificación (ver createData).
+	despuesDeCrear: async (valores)=>{
+		await db.query(
+			"UPDATE asistencias SET estado_id = (SELECT id FROM cat_estado_asistencia WHERE codigo = 'falta_justificada') "+
+			"WHERE id = ? AND estado_id = (SELECT id FROM cat_estado_asistencia WHERE codigo = 'falta_injustificada')",
+			[valores.asistencia_id]
+		);
 	}
 };
 
@@ -362,6 +371,21 @@ const reportes_asistencia={
 	crear: [],
 	modificar: [],
 	alcance: ()=>sinFiltro
+};
+
+// NUEVO: historial de asistencia de los hijos del tutor (RF-31 y RF-32).
+// Solo de lectura; "desde" filtra por fecha (la tarjeta pide el mes actual).
+const mi_historial={
+	tabla: "mi_historial",
+	columnas: ["id", "infante_id", "tutor_id", "fecha", "turno", "estado_codigo", "estado_nombre", "es_falta", "justificada"],
+	busqueda: [],
+	columnaFecha: "fecha",
+	leer: ["tutor"],
+	crear: [],
+	modificar: [],
+	alcance: (usuario)=>{
+		return {sql: "tutor_id = ?", valores: [usuario.tutor_id]};
+	}
 };
 
 // NUEVO: causas que obligan a presentar alta médica para volver (RN-04).
@@ -571,6 +595,10 @@ async function createData(config, usuario, req, res){
 	}
 	// NUEVO: el id lo asigna MySQL (AUTO_INCREMENT); el profe lo recibía del formulario.
 	let [resultado]=await db.query("INSERT INTO "+config.tabla+" SET ?", [valores]);
+	// NUEVO: algunos recursos hacen algo más después de crear (justificaciones).
+	if(config.despuesDeCrear){
+		await config.despuesDeCrear(valores);
+	}
 	// NUEVO: React-admin necesita el id del registro creado en la respuesta.
 	// Nunca se devuelve password_hash.
 	delete valores.password_hash;
@@ -907,6 +935,7 @@ registrarRutas("reportes_asistencia", reportes_asistencia);
 registrarRutas("mi_asistencia", mi_asistencia);
 registrarRutas("bandeja_seguimientos", bandeja_seguimientos);
 registrarRutas("alta_pendiente", alta_pendiente);
+registrarRutas("mi_historial", mi_historial);
 
 // NUEVO: no hay rutas DELETE. El profe borraba registros; en SIRAI se usa baja
 // lógica (activo = FALSE) y nadie tiene permiso "delete" en src/permisos.ts.

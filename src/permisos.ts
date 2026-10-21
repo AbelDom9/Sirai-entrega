@@ -20,6 +20,7 @@ export const RECURSOS = {
   cat_estado_asistencia: "Estados de asistencia", motivos_falta: "Motivos de falta",
   pase_lista: "Pase de lista", mi_asistencia: "Asistencia de mis hijos",
   bandeja_seguimientos: "Bandeja de faltas", alta_pendiente: "Alta médica pendiente",
+  mi_historial: "Historial de mis hijos",
   privacidad: "Aviso de privacidad", consentimientos: "Consentimiento",
 };
 
@@ -74,6 +75,8 @@ export const PERMISOS: Record<Rol, Record<string, readonly string[]>> = {
     asistencias: ["list", "show"], justificaciones: ["list", "show", "create", "edit"],
     motivos_falta: ["list", "show"], cat_estado_asistencia: ["list", "show"],
     mi_asistencia: ["show"], privacidad: ["show"], consentimientos: ["create"],
+    // Historial de sus hijos en la tarjeta (RF-31 y RF-32).
+    mi_historial: ["list"],
   },
 };
 

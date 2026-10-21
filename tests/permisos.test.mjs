@@ -35,6 +35,13 @@ test("alta pendiente: la consultan quienes pasan lista, nunca el tutor", () => {
   assert.equal(tienePermiso("tutor", "alta_pendiente", "list"), false);
 });
 
+test("historial del tutor: solo el tutor", () => {
+  assert.equal(tienePermiso("tutor", "mi_historial", "list"), true);
+  for (const rol of ["administrador", "profesor", "doctor_asesor"]) {
+    assert.equal(tienePermiso(rol, "mi_historial", "list"), false);
+  }
+});
+
 test("tutor: justificación y consentimiento, sin gestión institucional", () => {
   assert.equal(tienePermiso("tutor", "mi_asistencia", "show"), true);
   assert.equal(tienePermiso("tutor", "justificaciones", "create"), true);
