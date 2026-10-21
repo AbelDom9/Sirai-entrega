@@ -59,6 +59,8 @@ export const PERMISOS: Record<Rol, Record<string, readonly string[]>> = {
     asistencias: ["list", "show"], justificaciones: ["list", "show"],
     seguimientos: ["list", "show", "create", "edit"],
     motivos_falta: ["list", "show"], cat_estado_asistencia: ["list", "show"],
+    // Puede corregir el pase de lista de su estancia, también después del corte.
+    pase_lista: ["show", "edit"],
   },
   tutor: {
     infantes: ["list", "show"], tutores: ["list", "show"],

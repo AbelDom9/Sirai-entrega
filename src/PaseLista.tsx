@@ -1,6 +1,6 @@
 // NUEVO: useState guarda cambios de pantalla; useEffect carga datos al cambiar el grupo.
 import { useEffect, useState } from "react";
-import { useDataProvider, useGetList, useNotify, Title, useCanAccess } from "react-admin";
+import { useDataProvider, useGetList, useNotify, Title, useCanAccess, usePermissions } from "react-admin";
 import type { Identifier, RaRecord } from "react-admin";
 import { Alert, Box, Button, Card, CardContent, MenuItem, Stack, TextField, Typography } from "@mui/material";
 import type { SiraiDataProvider } from "./dataProvider";
@@ -14,6 +14,24 @@ const fechaLocal = () => {
   return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
 };
 
+// NUEVO: hora de corte de cada turno, igual que en api/index.js (RN-02).
+// La API es la que realmente bloquea; aquí solo se avisa a la persona.
+const HORA_CORTE: Record<string, string> = { matutino: "09:00", vespertino: "14:00" };
+
+const horaLocal = () => {
+  const ahora = new Date();
+  return `${String(ahora.getHours()).padStart(2, "0")}:${String(ahora.getMinutes()).padStart(2, "0")}`;
+};
+
+// NUEVO: true si el pase de lista de esa fecha y turno ya cerró.
+// Los textos "AAAA-MM-DD" y "HH:MM" se pueden comparar con < y >=.
+const turnoCerrado = (fecha: string, turno: string) => {
+  const hoy = fechaLocal();
+  if (fecha < hoy) return true;
+  if (fecha > hoy) return false;
+  return horaLocal() >= HORA_CORTE[turno];
+};
+
 export const PaseLista = () => {
   // NUEVO: useDataProvider da acceso directo a los métodos de la API.
   const provider = useDataProvider<SiraiDataProvider>();
@@ -21,6 +39,9 @@ export const PaseLista = () => {
   const notify = useNotify();
   // NUEVO: el guardado requiere permiso edit además de poder ver la pantalla.
   const { canAccess: puedeEditar } = useCanAccess({ resource: "pase_lista", action: "edit" });
+  // NUEVO: usePermissions devuelve el rol; después del corte solo corrigen
+  // el administrador y el doctor/asesor.
+  const { permissions: rol } = usePermissions();
   const [sala, setSala] = useState("");
   const [fecha, setFecha] = useState(fechaLocal);
   const [turno, setTurno] = useState("matutino");
@@ -85,7 +106,10 @@ export const PaseLista = () => {
     return () => { activo = false; };
   }, [sala, fecha, turno, grupoActual, provider]);
 
-  const listo = !!puedeEditar && !cargando && !guardando && grupoCargado === grupoActual && infantes.length > 0 && !error;
+  const cerrado = turnoCerrado(fecha, turno);
+  const puedeCorregir = rol === "administrador" || rol === "doctor_asesor";
+  const bloqueadoPorCorte = cerrado && !puedeCorregir;
+  const listo = !!puedeEditar && !bloqueadoPorCorte && !cargando && !guardando && grupoCargado === grupoActual && infantes.length > 0 && !error;
   const presente = estados.data?.find((estado) => estado.codigo === "presente");
   const seleccionSala = salas.data?.find((item) => String(item.id) === sala);
 
@@ -141,6 +165,9 @@ export const PaseLista = () => {
           <MenuItem value="matutino">Matutino</MenuItem><MenuItem value="vespertino">Vespertino</MenuItem>
         </TextField>
       </Stack>
+      {/* NUEVO: aviso del corte con texto, no solo con color (accesibilidad). */}
+      {sala && bloqueadoPorCorte && <Alert severity="warning" sx={{ mb: 2 }}>El pase de lista {turno} cerró a las {HORA_CORTE[turno]}. Solo el administrador o el doctor/asesor pueden corregirlo.</Alert>}
+      {sala && cerrado && puedeCorregir && <Alert severity="info" sx={{ mb: 2 }}>Este pase de lista ya cerró a las {HORA_CORTE[turno]}. Estás haciendo una corrección; las faltas nuevas generarán su seguimiento.</Alert>}
       {cambios && <Typography role="status" sx={{ mb: 2 }}>Tienes cambios pendientes. Guarda o descarta antes de cambiar el grupo.</Typography>}
       {(salas.error || estados.error || error) && <Alert severity="error">{error || "No se pudieron cargar los catálogos. La API debe estar disponible."}</Alert>}
       {salas.total !== undefined && salas.total > 500 && <Alert severity="warning">Solo se muestran las primeras 500 salas. Pendiente incorporar búsqueda de salas en el servidor.</Alert>}
