@@ -83,14 +83,21 @@ function exigirRol(usuario, rolesPermitidos){
 
 // NUEVO: responde según el error. El profe respondía 401 siempre.
 function responderError(error, res){
-	if(error.status){
-		res.sendStatus(error.status);
-	}else if(error.name=="JsonWebTokenError" || error.name=="TokenExpiredError"){
-		res.sendStatus(401);
-	}else{
-		console.error(error.message);
-		res.sendStatus(500);
+	let status=error.status || 500;
+	if(error.name=="JsonWebTokenError" || error.name=="TokenExpiredError"){
+		status=401;
 	}
+	const mensajes={
+		400: "Revisa los datos enviados e inténtalo nuevamente.",
+		401: "Tu sesión terminó o no es válida. Vuelve a iniciar sesión.",
+		403: "No tienes permiso para realizar esta acción.",
+		404: "No se encontró el registro solicitado."
+	};
+	if(status>=500){
+		console.error(error.message);
+	}
+	// JSON permite que el frontend lea message sin mostrar detalles técnicos internos.
+	res.status(status).json({message: mensajes[status] || "No se pudo completar la operación. Inténtalo nuevamente más tarde."});
 }
 
 // =====================================================================
@@ -920,7 +927,7 @@ app.post("/api/login", async (req, res)=>{
 		);
 		let data=filas[0];
 		if(data==null){
-			res.sendStatus(401);
+			res.status(401).json({message: "Usuario o contraseña incorrectos."});
 		// CORRECCIÓN DEL EJEMPLO: el profe escribió argon2.verify(...) sin await.
 		// verify devuelve una promesa, y una promesa siempre cuenta como verdadera,
 		// así que el ejemplo aceptaba CUALQUIER contraseña. Con await se revisa de verdad.
@@ -938,12 +945,20 @@ app.post("/api/login", async (req, res)=>{
 			// NUEVO: además de token e id (profe), se envían fullName y rol para el frontend.
 			res.json({"token":token, "id":data.id, "fullName":data.nombre, "rol":data.rol});
 		}else{
-			res.sendStatus(401);
+			res.status(401).json({message: "Usuario o contraseña incorrectos."});
 		}
 	}catch(error){
 		responderError(error, res);
 	}
 })
+
+// Las rutas inexistentes y los errores del procesamiento de JSON también se traducen.
+app.use((req, res)=>{
+	res.status(404).json({message: "No se encontró la dirección solicitada."});
+});
+app.use((error, req, res, next)=>{
+	responderError(error, res);
+});
 
 // Como el profe: servidor HTTPS con server.key y server.crt.
 // HTTPS cifra el token y las contraseñas mientras viajan por la red.
