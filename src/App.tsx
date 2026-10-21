@@ -14,6 +14,7 @@ import { InfanteTutorList, InfanteTutorCreate, InfanteTutorEdit } from "./infant
 import { UsuarioList, UsuarioCreate, UsuarioEdit } from "./usuarios";
 import { JustificacionList, JustificacionCreate, JustificacionEdit } from "./justificaciones";
 import { SeguimientoList, SeguimientoCreate, SeguimientoEdit } from "./seguimientos";
+import { BandejaList } from "./bandeja";
 import { AsistenciaList } from "./asistencias";
 import { CatalogoList } from "./catalogos";
 import { ReporteList } from "./reportes";
@@ -72,6 +73,8 @@ export const App = () => (
     <Resource name="asistencias" options={{ label: "Historial de asistencia" }} list={AsistenciaList} recordRepresentation={(record) => `Registro ${record.id} · ${record.fecha ?? ""}`} />
     <Resource name="justificaciones" options={{ label: "Justificaciones" }} list={JustificacionList} create={JustificacionCreate} edit={JustificacionEdit} />
     <Resource name="seguimientos" options={{ label: "Seguimiento de faltas" }} list={SeguimientoList} create={SeguimientoCreate} edit={SeguimientoEdit} />
+    {/* Bandeja de faltas del doctor/asesor: solo lectura, sus botones abren el seguimiento. */}
+    <Resource name="bandeja_seguimientos" options={{ label: "Bandeja de faltas" }} list={BandejaList} />
     <Resource name="reportes_asistencia" options={{ label: "Reportes agregados" }} list={ReporteList} />
     <Resource name="estatus_infante" options={{ label: "Estatus de inscripción" }} list={CatalogoList} recordRepresentation="nombre" />
     <Resource name="cat_estado_asistencia" options={{ label: "Estados de asistencia" }} list={CatalogoList} recordRepresentation="nombre" />

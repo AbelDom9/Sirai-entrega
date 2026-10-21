@@ -38,6 +38,7 @@ Cada recurso tiene `GET /api/recurso` (lista con `_sort`, `_order`, `_start`, `_
 | seguimientos | administrador, doctor/asesor | administrador, doctor/asesor | doctor: su estancia |
 | reportes_asistencia (vista) | administrador | — | filtros desde/hasta y estancia |
 | mi_asistencia (vista) | administrador, tutor | — | tutor: sus hijos |
+| bandeja_seguimientos (vista) | doctor/asesor | — (se atiende editando el seguimiento) | su estancia; incluye contactos de todos los tutores |
 
 Rutas propias:
 

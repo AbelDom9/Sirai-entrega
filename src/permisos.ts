@@ -19,6 +19,7 @@ export const RECURSOS = {
   reportes_asistencia: "Reportes agregados", estatus_infante: "Estatus de inscripción",
   cat_estado_asistencia: "Estados de asistencia", motivos_falta: "Motivos de falta",
   pase_lista: "Pase de lista", mi_asistencia: "Asistencia de mis hijos",
+  bandeja_seguimientos: "Bandeja de faltas",
   privacidad: "Aviso de privacidad", consentimientos: "Consentimiento",
 };
 
@@ -61,6 +62,8 @@ export const PERMISOS: Record<Rol, Record<string, readonly string[]>> = {
     motivos_falta: ["list", "show"], cat_estado_asistencia: ["list", "show"],
     // Puede corregir el pase de lista de su estancia, también después del corte.
     pase_lista: ["show", "edit"],
+    // Bandeja del día con contactos del tutor (RF-21). Solo el doctor/asesor.
+    bandeja_seguimientos: ["list"],
   },
   tutor: {
     infantes: ["list", "show"], tutores: ["list", "show"],
@@ -81,7 +84,7 @@ export const MENU_POR_ROL: Record<Rol, readonly string[]> = {
     "estatus_infante", "cat_estado_asistencia", "motivos_falta", "roles",
   ],
   profesor: ["asistencias", "justificaciones"],
-  doctor_asesor: ["seguimientos", "asistencias", "justificaciones", "tutores"],
+  doctor_asesor: ["bandeja_seguimientos", "seguimientos", "asistencias", "justificaciones", "tutores"],
   tutor: ["asistencias", "justificaciones"],
 };
 
@@ -100,6 +103,6 @@ export const tienePermiso = (rol: unknown, recurso: string, accion: string): boo
 export const INICIO_POR_ROL: Record<Rol, string> = {
   administrador: "/",
   profesor: "/pase-lista",
-  doctor_asesor: "/seguimientos",
+  doctor_asesor: "/bandeja_seguimientos",
   tutor: "/mis-hijos",
 };

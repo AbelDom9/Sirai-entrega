@@ -349,6 +349,23 @@ const reportes_asistencia={
 	alcance: ()=>sinFiltro
 };
 
+// NUEVO: vista del esquema con los seguimientos listos para atender (RF-21 y RF-22):
+// nombre del niño, sala, tipo de falta y contactos de TODOS sus tutores.
+// Solo de lectura y solo para el doctor/asesor, que ve únicamente su estancia.
+// Para anotar la llamada se edita el seguimiento normal (/api/seguimientos/:id).
+const bandeja_seguimientos={
+	tabla: "bandeja_seguimientos",
+	columnas: ["id", "asistencia_id", "estancia_id", "fecha", "turno", "infante_nombre", "sala_nombre",
+		"tipo_falta", "estado", "causa", "fecha_retorno", "contactos"],
+	busqueda: ["infante_nombre", "sala_nombre"],
+	leer: ["doctor_asesor"],
+	crear: [],
+	modificar: [],
+	alcance: (usuario)=>{
+		return {sql: "estancia_id = ?", valores: [usuario.estancia_id]};
+	}
+};
+
 // Vista del esquema: una fila por hijo del tutor.
 const mi_asistencia={
 	tabla: "mi_asistencia",
@@ -828,6 +845,7 @@ registrarRutas("justificaciones", justificaciones);
 registrarRutas("seguimientos", seguimientos);
 registrarRutas("reportes_asistencia", reportes_asistencia);
 registrarRutas("mi_asistencia", mi_asistencia);
+registrarRutas("bandeja_seguimientos", bandeja_seguimientos);
 
 // NUEVO: no hay rutas DELETE. El profe borraba registros; en SIRAI se usa baja
 // lógica (activo = FALSE) y nadie tiene permiso "delete" en src/permisos.ts.
