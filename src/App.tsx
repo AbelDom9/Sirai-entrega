@@ -34,6 +34,10 @@ const i18nProvider = polyglotI18nProvider(() => spanishMessages, "es");
 
 const temaClaro = {
   ...defaultLightTheme,
+  typography: {
+    ...defaultLightTheme.typography,
+    fontSize: 16,
+  },
   components: {
     ...defaultLightTheme.components,
     RaAppBar: {
@@ -62,6 +66,10 @@ const temaClaro = {
 // Un tercer tema sencillo: fondo negro, texto blanco y controles amarillos.
 const temaOscuro: ThemeOptions = {
   ...defaultDarkTheme,
+  typography: {
+    ...defaultDarkTheme.typography,
+    fontSize: 16,
+  },
   palette: {
     ...defaultDarkTheme.palette,
     contrastThreshold: 4.5,
@@ -70,6 +78,10 @@ const temaOscuro: ThemeOptions = {
 
 const temaAltoContraste: ThemeOptions = {
   ...defaultDarkTheme,
+  typography: {
+    ...defaultDarkTheme.typography,
+    fontSize: 16,
+  },
   palette: {
     ...defaultDarkTheme.palette,
     contrastThreshold: 4.5,
