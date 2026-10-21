@@ -52,8 +52,10 @@ INSERT INTO estatus_infante (codigo, nombre) VALUES
   ('baja_temporal',   'Baja temporal'),
   ('baja_definitiva', 'Baja definitiva');
 
--- Estados del pase de lista. El frontend busca codigo = 'presente'
+-- Estados del pase de lista (RF-13 del SRS). El frontend busca codigo = 'presente'
 -- para el botón "Todos presentes".
+-- Cuentan como asistencia: presente y filtro_salud (el niño sí llegó).
+-- Cuentan como falta: falta_justificada, falta_injustificada y licencia_medica.
 CREATE TABLE cat_estado_asistencia (
   id      TINYINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   codigo  VARCHAR(20)  NOT NULL UNIQUE,
@@ -61,22 +63,27 @@ CREATE TABLE cat_estado_asistencia (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO cat_estado_asistencia (codigo, nombre) VALUES
-  ('presente', 'Presente'),
-  ('falta',    'Falta'),
-  ('retardo',  'Retardo');
+  ('presente',            'Presente'),
+  ('falta_justificada',   'Falta justificada'),
+  ('falta_injustificada', 'Falta injustificada'),
+  ('licencia_medica',     'Licencia médica'),
+  ('filtro_salud',        'Filtro de salud');
 
--- Motivos de falta en lenguaje sencillo (Tabla 15 del reporte).
+-- Causas de falta (RF-23 del SRS). "codigo" lo usan las reglas de la API
+-- (alta médica, alertas); la pantalla muestra solo "nombre", en lenguaje
+-- sencillo (RA-04), nunca el código.
 CREATE TABLE motivos_falta (
   id      TINYINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  codigo  VARCHAR(10)  NOT NULL UNIQUE,
   nombre  VARCHAR(100) NOT NULL UNIQUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO motivos_falta (nombre) VALUES
-  ('Enfermedad en casa'),
-  ('Cita médica'),
-  ('Asunto familiar'),
-  ('Vacaciones'),
-  ('Sin motivo informado');
+INSERT INTO motivos_falta (codigo, nombre) VALUES
+  ('ENF_CASA', 'Enfermedad en casa'),
+  ('ACC_EXT',  'Accidente fuera de la estancia'),
+  ('PER_TUT',  'Permiso o trámite del tutor'),
+  ('NO_LOC',   'No se localizó al tutor'),
+  ('OTRO',     'Otro motivo');
 
 -- Motivos de baja (de Pablo: motivo_baja).
 CREATE TABLE motivos_baja (
@@ -322,7 +329,8 @@ CREATE TABLE log (
 
 -- Recurso "reportes_asistencia" (administrador): cifras por estancia y mes,
 -- SIN nombres ni CURP de infantes (Tabla 14 del reporte).
--- "retardo" cuenta como asistencia; "falta" como ausencia.
+-- Asistencia: presente y filtro_salud. Ausencia: falta_justificada,
+-- falta_injustificada y licencia_medica.
 -- La API aplica los filtros del frontend:
 --   desde/hasta -> sobre fecha_inicio;  estancia_id -> sobre estancia_id.
 CREATE VIEW reportes_asistencia AS
@@ -333,9 +341,10 @@ SELECT
   r.periodo                                                AS periodo,
   CAST(CONCAT(r.periodo, '-01') AS DATE)                   AS fecha_inicio,
   COUNT(*)                                                 AS total_registros,
-  SUM(r.codigo IN ('presente', 'retardo'))                 AS presentes,
-  SUM(r.codigo = 'falta')                                  AS ausentes,
-  ROUND(100 * SUM(r.codigo IN ('presente', 'retardo')) / COUNT(*), 1)
+  SUM(r.codigo IN ('presente', 'filtro_salud'))            AS presentes,
+  SUM(r.codigo IN ('falta_justificada', 'falta_injustificada', 'licencia_medica'))
+                                                           AS ausentes,
+  ROUND(100 * SUM(r.codigo IN ('presente', 'filtro_salud')) / COUNT(*), 1)
                                                            AS porcentaje_asistencia
 FROM (
   -- Primero se calcula el mes de cada registro; luego se agrupa.
@@ -358,7 +367,7 @@ SELECT
   i.apellidos                                              AS apellidos,
   s.nombre                                                 AS sala_nombre,
   DATE_FORMAT(CURDATE(), '%Y-%m')                          AS periodo,
-  (SELECT ROUND(100 * SUM(c.codigo IN ('presente', 'retardo')) / COUNT(*), 1)
+  (SELECT ROUND(100 * SUM(c.codigo IN ('presente', 'filtro_salud')) / COUNT(*), 1)
      FROM asistencias a
      JOIN cat_estado_asistencia c ON a.estado_id = c.id
     WHERE a.infante_id = i.id

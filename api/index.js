@@ -250,9 +250,11 @@ const cat_estado_asistencia={
 	alcance: ()=>sinFiltro
 };
 
+// "codigo" (ENF_CASA, ACC_EXT, PER_TUT, NO_LOC, OTRO) lo usarán las reglas
+// de alta médica y alertas; la pantalla muestra solo "nombre".
 const motivos_falta={
 	tabla: "motivos_falta",
-	columnas: ["id", "nombre"],
+	columnas: ["id", "codigo", "nombre"],
 	busqueda: ["nombre"],
 	leer: TODOS,
 	crear: [],
