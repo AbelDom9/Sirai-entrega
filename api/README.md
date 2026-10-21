@@ -38,12 +38,15 @@ Cada recurso tiene `GET /api/recurso` (lista con `_sort`, `_order`, `_start`, `_
 | seguimientos | administrador, doctor/asesor | administrador, doctor/asesor | doctor: su estancia |
 | reportes_asistencia (vista) | administrador | — | filtros desde/hasta y estancia |
 | mi_asistencia (vista) | administrador, tutor | — | tutor: sus hijos |
+| bandeja_seguimientos (vista) | doctor/asesor | — (se atiende editando el seguimiento) | su estancia; incluye contactos de todos los tutores |
+| alta_pendiente (vista) | administrador, profesor, doctor/asesor | — | profesor: su sala; doctor: su estancia. Solo ids, sin motivo médico |
 
 Rutas propias:
 
 - `POST /api/login`: responde `{ token, id, fullName, rol }`.
 - `POST /api/asistencias/lote`: pase de lista del grupo en una transacción. Si se repite, actualiza en lugar de duplicar.
   - **Corte (RF-16):** el matutino cierra a las 09:00 y el vespertino a las 14:00 (constantes `HORA_CORTE_MATUTINO` y `HORA_CORTE_VESPERTINO`, hora de la computadora donde corre la API). Antes del corte guardan el profesor de esa sala, el doctor/asesor de esa estancia y el administrador; después, solo el doctor/asesor y el administrador.
+  - **Alta médica (RF-27):** si un niño tiene un seguimiento con "requiere alta" y sin fecha de alta, no se puede guardar como Presente ni Filtro de salud (responde 409 con su nombre). Los motivos ENF_CASA y ACC_EXT activan "requiere alta" automáticamente.
   - **Seguimiento automático (RF-20):** al llegar el corte, cada falta (justificada, injustificada o licencia médica) recibe un seguimiento "pendiente". Lo revisa un reloj cada minuto y al arrancar la API; también se ejecuta después de una corrección. Nunca se duplica (llave única por asistencia).
 - `GET /api/avisos_privacidad/vigente` (administrador, tutor) y `POST /api/consentimientos` (tutor; el tutor sale del token).
 - `GET /`: comprobación pública (solo responde un texto). `GET /api/test-db`: comprobación de la base, solo con token de administrador.

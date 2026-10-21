@@ -57,6 +57,9 @@ export const PaseLista = () => {
   // NUEVO: useGetList consulta un recurso sin necesitar el componente List.
   const salas = useGetList("salas", { pagination: { page: 1, perPage: 500 }, sort: { field: "nombre", order: "ASC" } });
   const estados = useGetList("cat_estado_asistencia", { pagination: { page: 1, perPage: 100 }, sort: { field: "id", order: "ASC" } });
+  // NUEVO (RF-27): niños de la sala con alta médica pendiente. El tercer
+  // argumento { enabled: !!sala } evita consultar mientras no hay sala elegida.
+  const altas = useGetList("alta_pendiente", { pagination: { page: 1, perPage: 500 }, sort: { field: "id", order: "ASC" }, filter: { sala_id: sala } }, { enabled: !!sala });
 
   useEffect(() => {
     // NUEVO: ignoramos respuestas antiguas si cambia la sala o se desmonta la pantalla.
@@ -118,9 +121,18 @@ export const PaseLista = () => {
     setCambios(true);
   };
 
+  // NUEVO (RF-27): true si el niño tiene alta médica pendiente.
+  const requiereAlta = (id: Identifier) => !!altas.data?.some((alta) => String(alta.infante_id) === String(id));
+  // Estados que significan que el niño entró; no se permiten sin alta.
+  const ESTADOS_ENTRADA = ["presente", "filtro_salud"];
+
   const todosPresentes = () => {
     if (!presente) return;
-    setMarcas((actuales) => Object.fromEntries(infantes.map((niño) => [String(niño.id), { ...actuales[String(niño.id)], estado_id: String(presente.id) }])));
+    // Los niños con alta pendiente se saltan y conservan lo que tenían.
+    setMarcas((actuales) => Object.fromEntries(infantes.map((niño) => [
+      String(niño.id),
+      requiereAlta(niño.id) ? actuales[String(niño.id)] : { ...actuales[String(niño.id)], estado_id: String(presente.id) },
+    ])));
     setCambios(true);
   };
 
@@ -183,10 +195,15 @@ export const PaseLista = () => {
         {infantes.map((niño) => (
           <Card key={niño.id}><CardContent>
             <Typography component="h2" variant="h6" gutterBottom>{niño.nombre} {niño.apellidos}</Typography>
+            {/* NUEVO (RF-27): aviso escrito, no solo color. */}
+            {requiereAlta(niño.id) && <Alert severity="warning" sx={{ mb: 2 }}>Requiere alta médica para entrar. No puede marcarse Presente ni Filtro de salud hasta que se registre el alta.</Alert>}
             <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
               {/* NUEVO: controles con valor y onChange reflejan el estado de React. */}
               <TextField select label={`Asistencia de ${niño.nombre} ${niño.apellidos}`} value={marcas[String(niño.id)]?.estado_id ?? ""} disabled={!listo} onChange={(e) => actualizar(niño.id, "estado_id", e.target.value)} sx={{ minWidth: 240 }}>
-                {estados.data?.map((estado) => <MenuItem key={estado.id} value={String(estado.id)}>{estado.nombre}</MenuItem>)}
+                {estados.data?.map((estado) => (
+                  // NUEVO: disabled desactiva la opción para un niño con alta pendiente.
+                  <MenuItem key={estado.id} value={String(estado.id)} disabled={requiereAlta(niño.id) && ESTADOS_ENTRADA.includes(estado.codigo)}>{estado.nombre}</MenuItem>
+                ))}
               </TextField>
               <TextField label={`Incidencia de ${niño.nombre} ${niño.apellidos}`} value={marcas[String(niño.id)]?.incidencia ?? ""} disabled={!listo} onChange={(e) => actualizar(niño.id, "incidencia", e.target.value)} fullWidth />
             </Stack>

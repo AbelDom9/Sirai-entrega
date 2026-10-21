@@ -55,7 +55,10 @@ export const httpClient = async (url: string, options: fetchUtils.Options = {}) 
         422: mensajesError.datos,
         429: mensajesError.demasiadasPeticiones,
       };
-      throw new HttpError(mensajesPorEstado[error.status] ?? mensajesError.servidor, error.status, error.body);
+      // Si la API manda un mensaje propio (por ejemplo, el corte o el alta médica),
+      // se respeta; si no, se usa el mensaje general por código.
+      const mensajeApi = error.body && typeof error.body.message === "string" ? error.body.message : "";
+      throw new HttpError(mensajeApi || (mensajesPorEstado[error.status] ?? mensajesError.servidor), error.status, error.body);
     }
     // Un fallo de red o certificado no tiene respuesta HTTP: evitamos "Failed to fetch".
     throw new HttpError(mensajesError.conexion, 0);

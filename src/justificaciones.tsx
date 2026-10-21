@@ -1,4 +1,4 @@
-import { List, DataTable, TextInput, Create, Edit, SimpleForm, EditButton, ReferenceInput, ReferenceField, SelectInput, required, useCanAccess } from "react-admin";
+import { List, DataTable, TextInput, Create, Edit, SimpleForm, EditButton, ReferenceInput, ReferenceField, SelectInput, required, useCanAccess, usePermissions } from "react-admin";
 import { GuardarToolbar } from "./GuardarToolbar";
 import { AsistenciaOpcion } from "./AsistenciaOpcion";
 
@@ -9,8 +9,11 @@ export const JustificacionList = () => {
   // consultar tutores. El profesor no puede (sin contactos de tutores), así que
   // la columna Tutor no se muestra en lugar de mostrar un error.
   const { canAccess: puedeVerTutores } = useCanAccess({ resource: "tutores", action: "list" });
+  // NUEVO: el tutor justifica desde la tarjeta de su hijo (RF-32), así que aquí
+  // no ve el botón "Crear" del formulario general.
+  const { permissions: rol } = usePermissions();
   return (
-  <List filters={filtros} exporter={false}>
+  <List filters={filtros} exporter={false} actions={rol === "tutor" ? false : undefined}>
     {/* NUEVO: el contenedor permite desplazar la tabla en pantallas pequeñas. */}
     <div style={{ overflowX: "auto" }}>
       <DataTable bulkActionButtons={false}>

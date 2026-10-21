@@ -19,6 +19,8 @@ export const RECURSOS = {
   reportes_asistencia: "Reportes agregados", estatus_infante: "Estatus de inscripción",
   cat_estado_asistencia: "Estados de asistencia", motivos_falta: "Motivos de falta",
   pase_lista: "Pase de lista", mi_asistencia: "Asistencia de mis hijos",
+  bandeja_seguimientos: "Bandeja de faltas", alta_pendiente: "Alta médica pendiente",
+  mi_historial: "Historial de mis hijos",
   privacidad: "Aviso de privacidad", consentimientos: "Consentimiento",
 };
 
@@ -45,12 +47,15 @@ export const PERMISOS: Record<Rol, Record<string, readonly string[]>> = {
     estatus_infante: ["list", "show"],
     cat_estado_asistencia: ["list", "show"], motivos_falta: ["list", "show"],
     pase_lista: ["show", "edit"], mi_asistencia: ["show"], privacidad: ["show"],
+    alta_pendiente: ["list"],
   },
   profesor: {
     // Sala y catálogos se consultan para mostrar los nombres en el pase de lista.
     estancias: ["list", "show"], salas: ["list", "show"], infantes: ["list", "show"],
     estatus_infante: ["list", "show"], cat_estado_asistencia: ["list", "show"],
     motivos_falta: ["list", "show"], pase_lista: ["show", "edit"],
+    // Para avisar en el pase de lista qué niños requieren alta (RF-27).
+    alta_pendiente: ["list"],
     asistencias: ["list", "show"], justificaciones: ["list", "show"],
   },
   doctor_asesor: {
@@ -61,12 +66,17 @@ export const PERMISOS: Record<Rol, Record<string, readonly string[]>> = {
     motivos_falta: ["list", "show"], cat_estado_asistencia: ["list", "show"],
     // Puede corregir el pase de lista de su estancia, también después del corte.
     pase_lista: ["show", "edit"],
+    // Bandeja del día con contactos del tutor (RF-21). Solo el doctor/asesor.
+    bandeja_seguimientos: ["list"],
+    alta_pendiente: ["list"],
   },
   tutor: {
     infantes: ["list", "show"], tutores: ["list", "show"],
     asistencias: ["list", "show"], justificaciones: ["list", "show", "create", "edit"],
     motivos_falta: ["list", "show"], cat_estado_asistencia: ["list", "show"],
     mi_asistencia: ["show"], privacidad: ["show"], consentimientos: ["create"],
+    // Historial de sus hijos en la tarjeta (RF-31 y RF-32).
+    mi_historial: ["list"],
   },
 };
 
@@ -81,7 +91,7 @@ export const MENU_POR_ROL: Record<Rol, readonly string[]> = {
     "estatus_infante", "cat_estado_asistencia", "motivos_falta", "roles",
   ],
   profesor: ["asistencias", "justificaciones"],
-  doctor_asesor: ["seguimientos", "asistencias", "justificaciones", "tutores"],
+  doctor_asesor: ["bandeja_seguimientos", "seguimientos", "asistencias", "justificaciones", "tutores"],
   tutor: ["asistencias", "justificaciones"],
 };
 
@@ -100,6 +110,6 @@ export const tienePermiso = (rol: unknown, recurso: string, accion: string): boo
 export const INICIO_POR_ROL: Record<Rol, string> = {
   administrador: "/",
   profesor: "/pase-lista",
-  doctor_asesor: "/seguimientos",
+  doctor_asesor: "/bandeja_seguimientos",
   tutor: "/mis-hijos",
 };
