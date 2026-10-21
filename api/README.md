@@ -42,7 +42,9 @@ Cada recurso tiene `GET /api/recurso` (lista con `_sort`, `_order`, `_start`, `_
 Rutas propias:
 
 - `POST /api/login`: responde `{ token, id, fullName, rol }`.
-- `POST /api/asistencias/lote`: pase de lista del grupo en una transacción (administrador o el profesor de esa sala). Si se repite, actualiza en lugar de duplicar.
+- `POST /api/asistencias/lote`: pase de lista del grupo en una transacción. Si se repite, actualiza en lugar de duplicar.
+  - **Corte (RF-16):** el matutino cierra a las 09:00 y el vespertino a las 14:00 (constantes `HORA_CORTE_MATUTINO` y `HORA_CORTE_VESPERTINO`, hora de la computadora donde corre la API). Antes del corte guardan el profesor de esa sala, el doctor/asesor de esa estancia y el administrador; después, solo el doctor/asesor y el administrador.
+  - **Seguimiento automático (RF-20):** al llegar el corte, cada falta (justificada, injustificada o licencia médica) recibe un seguimiento "pendiente". Lo revisa un reloj cada minuto y al arrancar la API; también se ejecuta después de una corrección. Nunca se duplica (llave única por asistencia).
 - `GET /api/avisos_privacidad/vigente` (administrador, tutor) y `POST /api/consentimientos` (tutor; el tutor sale del token).
 - `GET /`: comprobación pública (solo responde un texto). `GET /api/test-db`: comprobación de la base, solo con token de administrador.
 

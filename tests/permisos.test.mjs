@@ -17,6 +17,8 @@ test("doctor: seguimiento y contacto, sin administrar usuarios ni permisos", () 
   assert.equal(tienePermiso("doctor_asesor", "tutores", "list"), true);
   assert.equal(tienePermiso("doctor_asesor", "usuarios", "create"), false);
   assert.equal(tienePermiso("doctor_asesor", "roles", "list"), false);
+  // Corrige el pase de lista después del corte (decisión del equipo, RN-02).
+  assert.equal(tienePermiso("doctor_asesor", "pase_lista", "edit"), true);
 });
 
 test("tutor: justificación y consentimiento, sin gestión institucional", () => {
