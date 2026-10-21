@@ -1,6 +1,6 @@
 // NUEVO: useState guarda cambios de pantalla; useEffect carga datos al cambiar el grupo.
 import { useEffect, useState } from "react";
-import { useDataProvider, useGetList, useNotify, Title, useCanAccess } from "react-admin";
+import { useDataProvider, useGetList, useNotify, Title, useCanAccess, usePermissions } from "react-admin";
 import type { Identifier, RaRecord } from "react-admin";
 import { Alert, Box, Button, Card, CardContent, MenuItem, Stack, TextField, Typography } from "@mui/material";
 import type { SiraiDataProvider } from "./dataProvider";
@@ -14,6 +14,24 @@ const fechaLocal = () => {
   return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
 };
 
+// NUEVO: hora de corte de cada turno, igual que en api/index.js (RN-02).
+// La API es la que realmente bloquea; aquí solo se avisa a la persona.
+const HORA_CORTE: Record<string, string> = { matutino: "09:00", vespertino: "14:00" };
+
+const horaLocal = () => {
+  const ahora = new Date();
+  return `${String(ahora.getHours()).padStart(2, "0")}:${String(ahora.getMinutes()).padStart(2, "0")}`;
+};
+
+// NUEVO: true si el pase de lista de esa fecha y turno ya cerró.
+// Los textos "AAAA-MM-DD" y "HH:MM" se pueden comparar con < y >=.
+const turnoCerrado = (fecha: string, turno: string) => {
+  const hoy = fechaLocal();
+  if (fecha < hoy) return true;
+  if (fecha > hoy) return false;
+  return horaLocal() >= HORA_CORTE[turno];
+};
+
 export const PaseLista = () => {
   // NUEVO: useDataProvider da acceso directo a los métodos de la API.
   const provider = useDataProvider<SiraiDataProvider>();
@@ -21,6 +39,9 @@ export const PaseLista = () => {
   const notify = useNotify();
   // NUEVO: el guardado requiere permiso edit además de poder ver la pantalla.
   const { canAccess: puedeEditar } = useCanAccess({ resource: "pase_lista", action: "edit" });
+  // NUEVO: usePermissions devuelve el rol; después del corte solo corrigen
+  // el administrador y el doctor/asesor.
+  const { permissions: rol } = usePermissions();
   const [sala, setSala] = useState("");
   const [fecha, setFecha] = useState(fechaLocal);
   const [turno, setTurno] = useState("matutino");
@@ -36,6 +57,9 @@ export const PaseLista = () => {
   // NUEVO: useGetList consulta un recurso sin necesitar el componente List.
   const salas = useGetList("salas", { pagination: { page: 1, perPage: 500 }, sort: { field: "nombre", order: "ASC" } });
   const estados = useGetList("cat_estado_asistencia", { pagination: { page: 1, perPage: 100 }, sort: { field: "id", order: "ASC" } });
+  // NUEVO (RF-27): niños de la sala con alta médica pendiente. El tercer
+  // argumento { enabled: !!sala } evita consultar mientras no hay sala elegida.
+  const altas = useGetList("alta_pendiente", { pagination: { page: 1, perPage: 500 }, sort: { field: "id", order: "ASC" }, filter: { sala_id: sala } }, { enabled: !!sala });
 
   useEffect(() => {
     // NUEVO: ignoramos respuestas antiguas si cambia la sala o se desmonta la pantalla.
@@ -85,7 +109,10 @@ export const PaseLista = () => {
     return () => { activo = false; };
   }, [sala, fecha, turno, grupoActual, provider]);
 
-  const listo = !!puedeEditar && !cargando && !guardando && grupoCargado === grupoActual && infantes.length > 0 && !error;
+  const cerrado = turnoCerrado(fecha, turno);
+  const puedeCorregir = rol === "administrador" || rol === "doctor_asesor";
+  const bloqueadoPorCorte = cerrado && !puedeCorregir;
+  const listo = !!puedeEditar && !bloqueadoPorCorte && !cargando && !guardando && grupoCargado === grupoActual && infantes.length > 0 && !error;
   const presente = estados.data?.find((estado) => estado.codigo === "presente");
   const seleccionSala = salas.data?.find((item) => String(item.id) === sala);
 
@@ -94,9 +121,18 @@ export const PaseLista = () => {
     setCambios(true);
   };
 
+  // NUEVO (RF-27): true si el niño tiene alta médica pendiente.
+  const requiereAlta = (id: Identifier) => !!altas.data?.some((alta) => String(alta.infante_id) === String(id));
+  // Estados que significan que el niño entró; no se permiten sin alta.
+  const ESTADOS_ENTRADA = ["presente", "filtro_salud"];
+
   const todosPresentes = () => {
     if (!presente) return;
-    setMarcas((actuales) => Object.fromEntries(infantes.map((niño) => [String(niño.id), { ...actuales[String(niño.id)], estado_id: String(presente.id) }])));
+    // Los niños con alta pendiente se saltan y conservan lo que tenían.
+    setMarcas((actuales) => Object.fromEntries(infantes.map((niño) => [
+      String(niño.id),
+      requiereAlta(niño.id) ? actuales[String(niño.id)] : { ...actuales[String(niño.id)], estado_id: String(presente.id) },
+    ])));
     setCambios(true);
   };
 
@@ -141,6 +177,9 @@ export const PaseLista = () => {
           <MenuItem value="matutino">Matutino</MenuItem><MenuItem value="vespertino">Vespertino</MenuItem>
         </TextField>
       </Stack>
+      {/* NUEVO: aviso del corte con texto, no solo con color (accesibilidad). */}
+      {sala && bloqueadoPorCorte && <Alert severity="warning" sx={{ mb: 2 }}>El pase de lista {turno} cerró a las {HORA_CORTE[turno]}. Solo el administrador o el doctor/asesor pueden corregirlo.</Alert>}
+      {sala && cerrado && puedeCorregir && <Alert severity="info" sx={{ mb: 2 }}>Este pase de lista ya cerró a las {HORA_CORTE[turno]}. Estás haciendo una corrección; las faltas nuevas generarán su seguimiento.</Alert>}
       {cambios && <Typography role="status" sx={{ mb: 2 }}>Tienes cambios pendientes. Guarda o descarta antes de cambiar el grupo.</Typography>}
       {(salas.error || estados.error || error) && <Alert severity="error">{error || "No se pudieron cargar los catálogos. La API debe estar disponible."}</Alert>}
       {salas.total !== undefined && salas.total > 500 && <Alert severity="warning">Solo se muestran las primeras 500 salas. Pendiente incorporar búsqueda de salas en el servidor.</Alert>}
@@ -156,10 +195,15 @@ export const PaseLista = () => {
         {infantes.map((niño) => (
           <Card key={niño.id}><CardContent>
             <Typography component="h2" variant="h6" gutterBottom>{niño.nombre} {niño.apellidos}</Typography>
+            {/* NUEVO (RF-27): aviso escrito, no solo color. */}
+            {requiereAlta(niño.id) && <Alert severity="warning" sx={{ mb: 2 }}>Requiere alta médica para entrar. No puede marcarse Presente ni Filtro de salud hasta que se registre el alta.</Alert>}
             <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
               {/* NUEVO: controles con valor y onChange reflejan el estado de React. */}
               <TextField select label={`Asistencia de ${niño.nombre} ${niño.apellidos}`} value={marcas[String(niño.id)]?.estado_id ?? ""} disabled={!listo} onChange={(e) => actualizar(niño.id, "estado_id", e.target.value)} sx={{ minWidth: 240 }}>
-                {estados.data?.map((estado) => <MenuItem key={estado.id} value={String(estado.id)}>{estado.nombre}</MenuItem>)}
+                {estados.data?.map((estado) => (
+                  // NUEVO: disabled desactiva la opción para un niño con alta pendiente.
+                  <MenuItem key={estado.id} value={String(estado.id)} disabled={requiereAlta(niño.id) && ESTADOS_ENTRADA.includes(estado.codigo)}>{estado.nombre}</MenuItem>
+                ))}
               </TextField>
               <TextField label={`Incidencia de ${niño.nombre} ${niño.apellidos}`} value={marcas[String(niño.id)]?.incidencia ?? ""} disabled={!listo} onChange={(e) => actualizar(niño.id, "incidencia", e.target.value)} fullWidth />
             </Stack>

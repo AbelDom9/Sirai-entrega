@@ -17,6 +17,29 @@ test("doctor: seguimiento y contacto, sin administrar usuarios ni permisos", () 
   assert.equal(tienePermiso("doctor_asesor", "tutores", "list"), true);
   assert.equal(tienePermiso("doctor_asesor", "usuarios", "create"), false);
   assert.equal(tienePermiso("doctor_asesor", "roles", "list"), false);
+  // Corrige el pase de lista después del corte (decisión del equipo, RN-02).
+  assert.equal(tienePermiso("doctor_asesor", "pase_lista", "edit"), true);
+  // La bandeja con contactos es solo del doctor/asesor y solo de consulta.
+  assert.equal(tienePermiso("doctor_asesor", "bandeja_seguimientos", "list"), true);
+  assert.equal(tienePermiso("doctor_asesor", "bandeja_seguimientos", "edit"), false);
+  for (const rol of ["administrador", "profesor", "tutor"]) {
+    assert.equal(tienePermiso(rol, "bandeja_seguimientos", "list"), false);
+  }
+});
+
+test("alta pendiente: la consultan quienes pasan lista, nunca el tutor", () => {
+  for (const rol of ["administrador", "profesor", "doctor_asesor"]) {
+    assert.equal(tienePermiso(rol, "alta_pendiente", "list"), true);
+    assert.equal(tienePermiso(rol, "alta_pendiente", "edit"), false);
+  }
+  assert.equal(tienePermiso("tutor", "alta_pendiente", "list"), false);
+});
+
+test("historial del tutor: solo el tutor", () => {
+  assert.equal(tienePermiso("tutor", "mi_historial", "list"), true);
+  for (const rol of ["administrador", "profesor", "doctor_asesor"]) {
+    assert.equal(tienePermiso(rol, "mi_historial", "list"), false);
+  }
 });
 
 test("tutor: justificación y consentimiento, sin gestión institucional", () => {
@@ -55,7 +78,7 @@ test("las reglas y destinos iniciales tienen recursos y acciones conocidos", () 
   }
   // El administrador abre el tablero (Dashboard en "/"), que no depende de un recurso.
   assert.equal(INICIO_POR_ROL.administrador, "/");
-  const destinos = { profesor: ["pase_lista", "show"], doctor_asesor: ["seguimientos", "list"], tutor: ["mi_asistencia", "show"] };
+  const destinos = { profesor: ["pase_lista", "show"], doctor_asesor: ["bandeja_seguimientos", "list"], tutor: ["mi_asistencia", "show"] };
   for (const [rol, destino] of Object.entries(destinos)) {
     assert.equal(tienePermiso(rol, ...destino), true);
     assert.ok(INICIO_POR_ROL[rol].startsWith("/"));
