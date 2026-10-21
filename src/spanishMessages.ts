@@ -1,6 +1,25 @@
 import type { TranslationMessages } from "react-admin";
 
+// Mensajes compartidos por el login y las peticiones a la API.
+// Se exportan porque httpClient no es un componente y no puede usar useTranslate.
+export const mensajesError = {
+    conexion: 'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo nuevamente.',
+    credenciales: 'Usuario o contraseña incorrectos.',
+    sesion: 'Tu sesión terminó o no es válida. Vuelve a iniciar sesión.',
+    datos: 'Revisa los datos del formulario e inténtalo nuevamente.',
+    permiso: 'No tienes permiso para realizar esta acción.',
+    noEncontrado: 'No se encontró el registro solicitado.',
+    conflicto: 'Ya existe un registro con esos datos. Revisa la información.',
+    demasiadasPeticiones: 'Se realizaron demasiados intentos. Espera un momento y vuelve a intentarlo.',
+    servidor: 'No se pudo completar la operación. Inténtalo nuevamente más tarde.',
+    configuracion: 'El servicio de acceso no está configurado. Contacta al administrador.',
+    acceso: 'No se pudo completar el inicio de sesión. Contacta al administrador.',
+};
+
 const spanishMessages: TranslationMessages = {
+    sirai: {
+        errores: mensajesError,
+    },
     ra: {
         action: {
             add_filter: 'Añadir filtro',
