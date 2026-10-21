@@ -1,4 +1,6 @@
 import { Admin, Resource, CustomRoutes, defaultLightTheme, defaultDarkTheme } from "react-admin";
+import { StoreContextProvider, localStorageStore, useStore, useStoreContext } from "react-admin";
+import type { ThemeOptions } from "@mui/material/styles";
 // NUEVO: Route conecta una dirección con una pantalla propia.
 import { Route } from "react-router-dom";
 import polyglotI18nProvider from "ra-i18n-polyglot";
@@ -44,6 +46,8 @@ const temaClaro = {
   },
   palette: {
     ...defaultLightTheme.palette,
+    // Umbral para elegir texto claro u oscuro automáticamente; no valida toda la pantalla.
+    contrastThreshold: 4.5,
     primary: {
       main: "#611232",
       contrastText: "#FFFFFF",
@@ -55,13 +59,62 @@ const temaClaro = {
   },
 };
 
+// Un tercer tema sencillo: fondo negro, texto blanco y controles amarillos.
+const temaOscuro: ThemeOptions = {
+  ...defaultDarkTheme,
+  palette: {
+    ...defaultDarkTheme.palette,
+    contrastThreshold: 4.5,
+  },
+};
+
+const temaAltoContraste: ThemeOptions = {
+  ...defaultDarkTheme,
+  palette: {
+    ...defaultDarkTheme.palette,
+    contrastThreshold: 4.5,
+    mode: "dark",
+    background: { default: "#000000", paper: "#000000" },
+    text: { primary: "#FFFFFF", secondary: "#FFFFFF" },
+    primary: { main: "#FFFF00", contrastText: "#000000" },
+    secondary: { main: "#FFFF00", contrastText: "#000000" },
+    error: { main: "#FFB4AB" },
+    warning: { main: "#FFFF00" },
+    info: { main: "#80DEEA" },
+    success: { main: "#A5D6A7" },
+    divider: "#FFFFFF",
+    action: { active: "#FFFFFF", selected: "rgba(255,255,0,0.20)" },
+  },
+  components: {
+    ...defaultDarkTheme.components,
+    MuiCssBaseline: {
+      styleOverrides: {
+        "*:focus-visible": { outline: "3px solid #FFFF00", outlineOffset: "2px" },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: { notchedOutline: { borderColor: "#FFFFFF" } },
+    },
+    RaToolbar: {
+      styleOverrides: { root: { backgroundColor: "#000000", borderTop: "1px solid #FFFFFF" } },
+    },
+  },
+};
+
+// App y la barra comparten las preferencias persistentes de React-admin.
+const preferencias = localStorageStore();
+
 // NUEVO: recordRepresentation define el texto que muestran las referencias al recurso.
 const nombreCompleto = (record: { nombre?: string; apellidos?: string }) =>
   `${record.nombre ?? ""} ${record.apellidos ?? ""}`.trim();
 
 // NUEVO: requireAuth pide sesión incluso en las rutas propias.
-export const App = () => (
-  <Admin theme={temaClaro} darkTheme={defaultDarkTheme} defaultTheme="light" requireAuth title="SIRAI" layout={Layout} dashboard={Dashboard} dataProvider={dataProvider} authProvider={authProvider} i18nProvider={i18nProvider}>
+const AppConTema = () => {
+  const [altoContraste] = useStore("altoContraste", false);
+  const store = useStoreContext();
+
+  return (
+  <Admin store={store} theme={altoContraste ? temaAltoContraste : temaClaro} darkTheme={altoContraste ? temaAltoContraste : temaOscuro} defaultTheme="light" requireAuth title="SIRAI" layout={Layout} dashboard={Dashboard} dataProvider={dataProvider} authProvider={authProvider} i18nProvider={i18nProvider}>
     {/* Como en test-admin: cada Resource conecta una lista y sus formularios con la API. */}
     <Resource name="infantes" options={{ label: "Infantes" }} list={InfanteList} create={InfanteCreate} edit={InfanteEdit} icon={ChildCareIcon} recordRepresentation={nombreCompleto} />
     <Resource name="estancias" options={{ label: "Estancias" }} list={EstanciaList} create={EstanciaCreate} edit={EstanciaEdit} icon={SchoolIcon} recordRepresentation="nombre" />
@@ -85,4 +138,11 @@ export const App = () => (
       <Route path="/privacidad" element={<Acceso recurso="privacidad" accion="show"><AvisoPrivacidad /></Acceso>} />
     </CustomRoutes>
   </Admin>
+  );
+};
+
+export const App = () => (
+  <StoreContextProvider value={preferencias}>
+    <AppConTema />
+  </StoreContextProvider>
 );

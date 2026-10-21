@@ -2,13 +2,14 @@ import { HttpError } from "react-admin";
 import type { AuthProvider } from "react-admin";
 import { esRol, INICIO_POR_ROL, tienePermiso } from "./permisos";
 import { API_URL, cerrarSesion, httpClient, leerIdentidad } from "./sesion";
+import { mensajesError } from "./spanishMessages";
 
 // Basado en frontend/src/Authprovider.ts del repositorio de clase.
 // No hay usuarios ni servidor ficticios. La conexión depende de la API del equipo.
 export const authProvider: AuthProvider = {
   login: async ({ username, password }) => {
     cerrarSesion();
-    if (!API_URL) throw new Error("Falta configurar VITE_BACKEND con la URL de la API");
+    if (!API_URL) throw new Error(mensajesError.configuracion);
     const { json } = await httpClient(`${API_URL}/login`, {
       method: "POST", body: JSON.stringify({ username, password }),
     });
@@ -17,7 +18,7 @@ export const authProvider: AuthProvider = {
     // No se deduce un rol a partir del nombre de usuario ni de un ID numérico.
     if (!json || typeof json.token !== "string" || !json.token || !esRol(rol) ||
         !["string", "number"].includes(typeof json.id)) {
-      throw new Error("La API debe devolver token, id y un código de rol válido");
+      throw new Error(mensajesError.acceso);
     }
     sessionStorage.setItem("auth", json.token);
     sessionStorage.setItem("identity", JSON.stringify({ id: json.id, fullName: json.fullName, rol }));
@@ -29,7 +30,7 @@ export const authProvider: AuthProvider = {
   checkError: async ({ status }) => {
     if (status === 401) {
       cerrarSesion();
-      throw new HttpError("Tu sesión terminó; vuelve a iniciar sesión", 401);
+      throw new HttpError(mensajesError.sesion, 401);
     }
     // NUEVO: 403 no cierra la sesión: significa que falta permiso para esa acción.
   },
