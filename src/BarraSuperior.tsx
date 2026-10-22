@@ -1,8 +1,10 @@
 import { AppBar, TitlePortal, LoadingIndicator, useTheme, useStore } from "react-admin";
-import { Box, IconButton, Tooltip } from "@mui/material";
+import { Box, IconButton, Tooltip, useMediaQuery } from "@mui/material";
+import type { Theme } from "@mui/material";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import ContrastIcon from "@mui/icons-material/Contrast";
+import { BotonAyuda } from "./BotonAyuda";
 
 const ControlesBarra = () => {
   const [tema, cambiarTema] = useTheme("light");
@@ -35,6 +37,7 @@ const ControlesBarra = () => {
           <ContrastIcon />
         </IconButton>
       </Tooltip>
+      <BotonAyuda />
       <LoadingIndicator />
     </>
   );
@@ -48,7 +51,12 @@ const recorteDerecha = 10;
 // Espacio exterior para bajar la imagen dentro de la barra
 const espacioArriba = 0;
 
-export const BarraSuperior = () => (
+export const BarraSuperior = () => {
+  const esCelular = useMediaQuery<Theme>((theme) => theme.breakpoints.down("sm"));
+  // Reducimos imagen y recortes en la misma proporción para conservar el logo.
+  const escala = esCelular ? 0.4 : 1;
+
+  return (
   <AppBar
     toolbar={<ControlesBarra />}
     sx={{ backgroundColor: "#611232", color: "#FFFFFF", backgroundImage: "none" }}
@@ -58,7 +66,7 @@ export const BarraSuperior = () => (
         display: "inline-flex",
         overflow: "hidden",
         mt: `${espacioArriba}px`,
-        mr: 2,
+        mr: esCelular ? 0.5 : 2,
         flexShrink: 0,
       }}
     >
@@ -69,16 +77,17 @@ export const BarraSuperior = () => (
         sx={{
           display: "block",
           width: "auto",
-          height: alturaImagen,
+          height: alturaImagen * escala,
           maxWidth: "none",
           flexShrink: 0,
-          marginTop: `-${recorteArriba}px`,
-          marginBottom: `-${recorteAbajo}px`,
-          marginLeft: `-${recorteIzquierda}px`,
-          marginRight: `-${recorteDerecha}px`,
+          marginTop: `-${recorteArriba * escala}px`,
+          marginBottom: `-${recorteAbajo * escala}px`,
+          marginLeft: `-${recorteIzquierda * escala}px`,
+          marginRight: `-${recorteDerecha * escala}px`,
         }}
       />
     </Box>
-    <TitlePortal sx={{ flex: 1, minWidth: 0 }} />
+    <TitlePortal sx={{ flex: 1, minWidth: 0, visibility: esCelular ? "hidden" : "visible" }} />
   </AppBar>
-);
+  );
+};
