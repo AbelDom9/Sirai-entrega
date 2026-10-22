@@ -55,7 +55,13 @@ test("administrador: gestión y consulta del panel de permisos", () => {
   assert.equal(tienePermiso("administrador", "usuarios", "create"), true);
   assert.equal(tienePermiso("administrador", "roles", "list"), true);
   assert.equal(tienePermiso("administrador", "reportes_asistencia", "list"), true);
-  assert.equal(tienePermiso("administrador", "roles", "edit"), false, "No existe editor dinámico de permisos sin backend");
+  // RF-10: puede cambiar el nombre de un rol (no sus permisos) y mantener catálogos.
+  assert.equal(tienePermiso("administrador", "roles", "edit"), true);
+  assert.equal(tienePermiso("administrador", "roles", "create"), false);
+  for (const catalogo of ["estatus_infante", "cat_estado_asistencia", "motivos_falta"]) {
+    assert.equal(tienePermiso("administrador", catalogo, "create"), true);
+    assert.equal(tienePermiso("profesor", catalogo, "edit"), false);
+  }
 });
 
 test("lo desconocido y los borrados no se autorizan", () => {

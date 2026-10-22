@@ -18,7 +18,7 @@ import { JustificacionList, JustificacionCreate, JustificacionEdit } from "./jus
 import { SeguimientoList, SeguimientoCreate, SeguimientoEdit } from "./seguimientos";
 import { BandejaList } from "./bandeja";
 import { AsistenciaList } from "./asistencias";
-import { CatalogoList } from "./catalogos";
+import { CatalogoList, CatalogoCreate, CatalogoEdit } from "./catalogos";
 import { ReporteList } from "./reportes";
 import { PaseLista } from "./PaseLista";
 import { MiAsistencia } from "./MiAsistencia";
@@ -141,10 +141,10 @@ const AppConTema = () => {
     {/* Bandeja de faltas del doctor/asesor: solo lectura, sus botones abren el seguimiento. */}
     <Resource name="bandeja_seguimientos" options={{ label: "Bandeja de faltas" }} list={BandejaList} />
     <Resource name="reportes_asistencia" options={{ label: "Reportes agregados" }} list={ReporteList} />
-    <Resource name="estatus_infante" options={{ label: "Estatus de inscripción" }} list={CatalogoList} recordRepresentation="nombre" />
-    <Resource name="cat_estado_asistencia" options={{ label: "Estados de asistencia" }} list={CatalogoList} recordRepresentation="nombre" />
-    <Resource name="motivos_falta" options={{ label: "Motivos de falta" }} list={CatalogoList} recordRepresentation="nombre" />
-    <Resource name="roles" options={{ label: "Roles y permisos" }} list={() => <Acceso recurso="roles" accion="list"><RolesPermisos /></Acceso>} recordRepresentation="nombre" />
+    <Resource name="estatus_infante" options={{ label: "Estatus de inscripción" }} list={CatalogoList} create={CatalogoCreate} edit={CatalogoEdit} recordRepresentation="nombre" />
+    <Resource name="cat_estado_asistencia" options={{ label: "Estados de asistencia" }} list={CatalogoList} create={CatalogoCreate} edit={CatalogoEdit} recordRepresentation="nombre" />
+    <Resource name="motivos_falta" options={{ label: "Motivos de falta" }} list={CatalogoList} create={CatalogoCreate} edit={CatalogoEdit} recordRepresentation="nombre" />
+    <Resource name="roles" options={{ label: "Roles y permisos" }} list={() => <Acceso recurso="roles" accion="list"><RolesPermisos /></Acceso>} edit={CatalogoEdit} recordRepresentation="nombre" />
     {/* NUEVO: Acceso usa CanAccess de React-admin en las rutas personalizadas. */}
     <CustomRoutes>
       <Route path="/inicio" element={<Dashboard />} />
