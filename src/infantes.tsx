@@ -1,5 +1,5 @@
 // NUEVO: DateInput captura fechas y required() valida campos obligatorios.
-import { DateInput, required } from "react-admin";
+import { DateInput, regex, required } from "react-admin";
 import { Create, DataTable, Edit, EditButton, List, ReferenceField, ReferenceInput, SelectInput, SimpleForm, SimpleList, TextInput } from "react-admin";
 import { GuardarToolbar } from "./GuardarToolbar";
 import { useMediaQuery } from "@mui/material";
@@ -62,7 +62,8 @@ const InfanteInputs = () => (
   <>
     {/* NUEVO: validate={required()} comprueba que el usuario capture un valor. */}
     <TextInput source="matricula" label="Matrícula" validate={required()} />
-    <TextInput source="curp" label="CURP" validate={required()} />
+    {/* NUEVO (RF-08): regex valida el formato oficial de la CURP (18 caracteres). */}
+    <TextInput source="curp" label="CURP" validate={[required(), regex(/^[A-Z][AEIOUX][A-Z]{2}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/, "La CURP debe tener 18 caracteres con el formato oficial, en mayúsculas")]} />
     <TextInput source="nombre" label="Nombre" validate={required()} />
     <TextInput source="apellidos" label="Apellidos" validate={required()} />
 

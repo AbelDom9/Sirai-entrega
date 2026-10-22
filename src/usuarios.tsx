@@ -2,7 +2,7 @@ import { List, DataTable, SimpleList, TextInput, Create, Edit, SimpleForm, EditB
 import { Box, useMediaQuery } from "@mui/material";
 import type { Theme } from "@mui/material";
 import { GuardarToolbar } from "./GuardarToolbar";
-import { email, minLength, PasswordInput } from "react-admin";
+import { email, minLength, PasswordInput, BooleanInput, BooleanField } from "react-admin";
 
 const filtros = [<TextInput key="q" source="q" label="Buscar" alwaysOn />];
 
@@ -37,6 +37,8 @@ export const UsuarioList = () => {
       <DataTable bulkActionButtons={false}>
         <DataTable.Col source="nombre" label="Nombre" />
         <DataTable.Col source="correo" label="Correo" />
+        {/* RF-05: una cuenta desactivada no puede iniciar sesión (la API lo revisa). */}
+        <DataTable.Col source="activo" label="Activo"><BooleanField source="activo" /></DataTable.Col>
         <DataTable.Col source="rol_id" label="Rol">
           <ReferenceField source="rol_id" reference="roles" link={false} />
         </DataTable.Col>
@@ -98,6 +100,8 @@ export const UsuarioEdit = () => (
       // La utilizams por si el usuario quiere cambiar su contraseña, si no la cambia, la deja vacía y no se modifica.
     
       <PasswordInput source="password" label="Nueva contraseña (dejar vacía para no cambiarla)" validate={minLength(8)} />
+      {/* NUEVO (RF-05): desactivar en lugar de borrar (baja lógica). */}
+      <BooleanInput source="activo" label="Cuenta activa" helperText="Si la desactivas, la persona ya no podrá iniciar sesión." />
     </SimpleForm>
   </Edit>
 );
