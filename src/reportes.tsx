@@ -4,7 +4,7 @@ import { DataTable, DateInput, List, NumberField, ReferenceInput, SelectInput } 
 // El administrador tendrá acceso cuando implementemos permisos reales en el servidor.
 export const ReporteList = () => (
   <List exporter={false} filters={[
-    <DateInput key="desde" source="desde" label="Desde" alwaysOn />,
+    <DateInput key="desde" source= "desde" label="Desde" alwaysOn />,
     <DateInput key="hasta" source="hasta" label="Hasta" alwaysOn />,
     <ReferenceInput key="estancia" source="estancia_id" reference="estancias"><SelectInput label="Estancia" optionText="nombre" /></ReferenceInput>,
   ]}>
