@@ -40,7 +40,6 @@ export const AvisoPrivacidad = () => {
     <Box sx={{ p: 2 }}>
       <Title title="Aviso de privacidad" />
       <Typography component="h1" variant="h5" gutterBottom>Aviso de privacidad y consentimiento</Typography>
-      <Alert severity="info" sx={{ mb: 2 }}>El texto oficial debe ser proporcionado y aprobado por ISSSTE. Esta pantalla lo obtiene de la API.</Alert>
       {isPending && <Typography role="status">Cargando aviso…</Typography>}
       {(error || (!isPending && !aviso?.texto)) && <Alert severity="error">El aviso vigente no está disponible. El consentimiento permanece deshabilitado.</Alert>}
       {aviso?.texto && <>

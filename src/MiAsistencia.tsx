@@ -93,7 +93,6 @@ export const MiAsistencia = () => {
     <Box sx={{ p: 2 }}>
       <Title title="Asistencia de mis hijos" />
       <Typography component="h1" variant="h5" gutterBottom>Asistencia de mis hijos</Typography>
-      <Alert severity="info" sx={{ mb: 2 }}>La vista del tutor requiere autenticación real y el endpoint personal de la API.</Alert>
       {isPending && <Typography role="status">Cargando asistencia…</Typography>}
       {error && <Alert severity="error">No se pudo consultar la asistencia. Revisa la conexión con nuestra API.</Alert>}
       {!isPending && !error && !data?.length && <Typography>No hay hijos asociados a esta cuenta.</Typography>}

@@ -181,7 +181,6 @@ const registrarSalida = async(niño: Infante) => {
       <Title title="Pase de lista" />
       <Typography component="h1" variant="h5" gutterBottom>Pase de lista por sala</Typography>
       <Typography gutterBottom>Selecciona la sala, marca los estados y guarda el grupo completo.</Typography>
-      <Alert severity="info" sx={{ mb: 2 }}>Esta pantalla requiere nuestra API. Los permisos por sala se validarán en el servidor.</Alert>
       <Stack spacing={2} direction={{ xs: "column", sm: "row" }} sx={{ mb: 2 }}>
         <TextField select label="Sala" value={sala} disabled={guardando || cambios} onChange={(e) => setSala(e.target.value)} sx={{ minWidth: 220 }}>
           {salas.data?.map((item) => <MenuItem key={item.id} value={String(item.id)}>{item.nombre}</MenuItem>)}
