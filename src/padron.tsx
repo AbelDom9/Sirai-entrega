@@ -16,7 +16,7 @@ const filtrosFecha = [
 ];
 
 export const MovimientoList = () => (
-  <List filters={filtrosFecha} sort={{ field: "id", order: "DESC" }} exporter={false} title="Movimientos">
+  <List empty={false} filters={filtrosFecha} sort={{ field: "id", order: "DESC" }} exporter={false} title="Movimientos">
     <div style={{ overflowX: "auto" }}>
       <DataTable bulkActionButtons={false} rowClick={false}>
         <DataTable.Col source="fecha" label="Fecha"><DateField source="fecha" locales="es-MX" /></DataTable.Col>
@@ -49,8 +49,10 @@ const BotonCerrarMes = () => {
 
 // RF-11: una fila por niño por mes (en lugar de una columna por mes).
 export const PadronList = () => (
+  // empty={false}: aunque todavía no haya filas, se muestra la tabla con su
+  // barra de acciones; si no, React-admin pone "Todavía no hay…" y oculta el botón.
   <List filters={filtrosFecha} sort={{ field: "periodo", order: "DESC" }} exporter={false} title="Padrón mensual"
-    actions={<TopToolbar><BotonCerrarMes /></TopToolbar>}>
+    empty={false} actions={<TopToolbar><BotonCerrarMes /></TopToolbar>}>
     <div style={{ overflowX: "auto" }}>
       <DataTable bulkActionButtons={false} rowClick={false}>
         <DataTable.Col source="periodo" label="Mes"><DateField source="periodo" locales="es-MX" options={{ year: "numeric", month: "long" }} /></DataTable.Col>
