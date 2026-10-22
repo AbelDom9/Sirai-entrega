@@ -20,7 +20,7 @@ export const RECURSOS = {
   cat_estado_asistencia: "Estados de asistencia", motivos_falta: "Motivos de falta",
   pase_lista: "Pase de lista", mi_asistencia: "Asistencia de mis hijos",
   bandeja_seguimientos: "Bandeja de faltas", alta_pendiente: "Alta médica pendiente",
-  mi_historial: "Historial de mis hijos",
+  mi_historial: "Historial de mis hijos", movimientos: "Movimientos", padron_mensual: "Padrón mensual",
   privacidad: "Aviso de privacidad", consentimientos: "Consentimiento",
 };
 
@@ -49,6 +49,8 @@ export const PERMISOS: Record<Rol, Record<string, readonly string[]>> = {
     cat_estado_asistencia: ["list", "show", "create", "edit"], motivos_falta: ["list", "show", "create", "edit"],
     pase_lista: ["show", "edit"], mi_asistencia: ["show"], privacidad: ["show"],
     alta_pendiente: ["list"],
+    // RF-11: consulta de movimientos y padrón mensual.
+    movimientos: ["list"], padron_mensual: ["list"],
   },
   profesor: {
     // Sala y catálogos se consultan para mostrar los nombres en el pase de lista.
@@ -90,6 +92,7 @@ export const MENU_POR_ROL: Record<Rol, readonly string[]> = {
     "infantes", "estancias", "salas", "tutores", "infante_tutor", "usuarios",
     "asistencias", "justificaciones", "seguimientos", "reportes_asistencia",
     "estatus_infante", "cat_estado_asistencia", "motivos_falta", "roles",
+    "movimientos", "padron_mensual",
   ],
   profesor: ["asistencias", "justificaciones"],
   doctor_asesor: ["bandeja_seguimientos", "seguimientos", "asistencias", "justificaciones", "tutores"],

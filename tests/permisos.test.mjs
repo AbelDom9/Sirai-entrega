@@ -35,6 +35,13 @@ test("alta pendiente: la consultan quienes pasan lista, nunca el tutor", () => {
   assert.equal(tienePermiso("tutor", "alta_pendiente", "list"), false);
 });
 
+test("movimientos y padrón mensual: solo el administrador (RF-11)", () => {
+  for (const recurso of ["movimientos", "padron_mensual"]) {
+    assert.equal(tienePermiso("administrador", recurso, "list"), true);
+    for (const rol of ["profesor", "doctor_asesor", "tutor"]) assert.equal(tienePermiso(rol, recurso, "list"), false);
+  }
+});
+
 test("historial del tutor: solo el tutor", () => {
   assert.equal(tienePermiso("tutor", "mi_historial", "list"), true);
   for (const rol of ["administrador", "profesor", "doctor_asesor"]) {

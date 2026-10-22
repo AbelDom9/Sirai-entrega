@@ -17,6 +17,7 @@ import { UsuarioList, UsuarioCreate, UsuarioEdit } from "./usuarios";
 import { JustificacionList, JustificacionCreate, JustificacionEdit } from "./justificaciones";
 import { SeguimientoList, SeguimientoCreate, SeguimientoEdit } from "./seguimientos";
 import { BandejaList } from "./bandeja";
+import { MovimientoList, PadronList } from "./padron";
 import { AsistenciaList } from "./asistencias";
 import { CatalogoList, CatalogoCreate, CatalogoEdit } from "./catalogos";
 import { ReporteList } from "./reportes";
@@ -140,6 +141,9 @@ const AppConTema = () => {
     <Resource name="seguimientos" options={{ label: "Seguimiento de faltas" }} list={SeguimientoList} create={SeguimientoCreate} edit={SeguimientoEdit} />
     {/* Bandeja de faltas del doctor/asesor: solo lectura, sus botones abren el seguimiento. */}
     <Resource name="bandeja_seguimientos" options={{ label: "Bandeja de faltas" }} list={BandejaList} />
+    {/* RF-11: movimientos e inscripciones mensuales (solo administrador). */}
+    <Resource name="movimientos" options={{ label: "Movimientos" }} list={MovimientoList} />
+    <Resource name="padron_mensual" options={{ label: "Padrón mensual" }} list={PadronList} />
     <Resource name="reportes_asistencia" options={{ label: "Reportes agregados" }} list={ReporteList} />
     <Resource name="estatus_infante" options={{ label: "Estatus de inscripción" }} list={CatalogoList} create={CatalogoCreate} edit={CatalogoEdit} recordRepresentation="nombre" />
     <Resource name="cat_estado_asistencia" options={{ label: "Estados de asistencia" }} list={CatalogoList} create={CatalogoCreate} edit={CatalogoEdit} recordRepresentation="nombre" />

@@ -175,7 +175,55 @@ const infantes={
 		if(usuario.rol=="profesor") return {sql: "sala_id = ?", valores: [usuario.sala_id]};
 		if(usuario.rol=="doctor_asesor") return {sql: "sala_id IN (SELECT id FROM salas WHERE estancia_id = ?)", valores: [usuario.estancia_id]};
 		return {sql: "id IN (SELECT infante_id FROM infante_tutor WHERE tutor_id = ?)", valores: [usuario.tutor_id]};
+	},
+	// NUEVO (RF-11): cada alta, cambio y baja queda en la tabla movimientos.
+	despuesDeCrear: async (valores, usuario, id)=>{
+		await registrarMovimiento(id, "ALTA", null, null, usuario);
+	},
+	despuesDeModificar: async (antes, valores, usuario)=>{
+		if(valores.sala_id!==undefined && String(valores.sala_id)!=String(antes.sala_id)){
+			await registrarMovimiento(antes.id, "CAMBIO_SALA", antes.sala_id, valores.sala_id, usuario);
+		}
+		if(valores.estatus_id!==undefined && String(valores.estatus_id)!=String(antes.estatus_id)){
+			await registrarMovimiento(antes.id, "CAMBIO_ESTATUS", antes.estatus_id, valores.estatus_id, usuario);
+		}
+		if(valores.activo!==undefined && Number(valores.activo)==0 && Number(antes.activo)==1){
+			await registrarMovimiento(antes.id, "BAJA", null, null, usuario);
+		}
 	}
+};
+
+// NUEVO (RF-11): guarda un movimiento del infante con la fecha de hoy y quién lo hizo.
+// valor_antes / valor_despues guardan el id anterior y el nuevo (sala o estatus).
+async function registrarMovimiento(infanteId, tipo, antes, despues, usuario){
+	await db.query(
+		"INSERT INTO movimientos (infante_id, fecha, tipo, valor_antes, valor_despues, usuario_id) VALUES (?, CURDATE(), ?, ?, ?, ?)",
+		[infanteId, tipo, antes===null ? null : String(antes), despues===null ? null : String(despues), usuario.usuario]
+	);
+}
+
+// NUEVO (RF-11): consulta del historial de movimientos y del padrón mensual.
+// Solo de lectura y solo para el administrador.
+const movimientos={
+	tabla: "movimientos",
+	columnas: ["id", "infante_id", "fecha", "tipo", "valor_antes", "valor_despues", "usuario_id", "registrado"],
+	busqueda: ["tipo"],
+	columnaFecha: "fecha",
+	leer: ["administrador"],
+	crear: [],
+	modificar: [],
+	alcance: ()=>sinFiltro
+};
+
+const padron_mensual={
+	tabla: "padron_mensual",
+	columnas: ["id", "periodo", "infante_id", "estancia_id", "estatus_id", "inscripcion_inicial"],
+	busqueda: [],
+	columnaFecha: "periodo",
+	leer: ["administrador"],
+	crear: [],
+	modificar: [],
+	alcance: ()=>sinFiltro
 };
 
 // El profesor no tiene acceso a tutores: el reporte pide que no vea sus contactos.
@@ -592,6 +640,12 @@ async function updateData(config, usuario, id, req, res){
 		throw errorHttp(400);
 	}
 	let alcance=config.alcance(usuario);
+	// NUEVO: algunos recursos necesitan los valores anteriores (movimientos, RF-11).
+	let antes=null;
+	if(config.despuesDeModificar){
+		let [filas]=await db.query("SELECT * FROM "+config.tabla+" WHERE id = ?", [id]);
+		antes=filas[0];
+	}
 	// NUEVO: "SET ?" de mysql2 convierte {nombre: "Ana"} en nombre = 'Ana'.
 	// El alcance también va en el WHERE: nadie modifica registros que no puede ver.
 	let [resultado]=await db.query(
@@ -600,6 +654,9 @@ async function updateData(config, usuario, id, req, res){
 	);
 	if(resultado.affectedRows==0){
 		throw errorHttp(404);
+	}
+	if(config.despuesDeModificar && antes){
+		await config.despuesDeModificar(antes, valores, usuario);
 	}
 	await getOne(config, usuario, id, req, res);
 }
@@ -617,7 +674,7 @@ async function createData(config, usuario, req, res){
 	let [resultado]=await db.query("INSERT INTO "+config.tabla+" SET ?", [valores]);
 	// NUEVO: algunos recursos hacen algo más después de crear (justificaciones).
 	if(config.despuesDeCrear){
-		await config.despuesDeCrear(valores);
+		await config.despuesDeCrear(valores, usuario, resultado.insertId);
 	}
 	// NUEVO: React-admin necesita el id del registro creado en la respuesta.
 	// Nunca se devuelve password_hash.
@@ -969,6 +1026,30 @@ app.post("/api/seguimientos/:id/intento", async (req, res)=>{
 	}
 });
 
+// NUEVO (RF-11): cierre de mes. Guarda una fila por cada niño activo con su
+// estancia y estatus. INSERT IGNORE + llave única (periodo, infante_id) evitan
+// duplicar si se presiona dos veces. "inscripcion_inicial" es verdadero si es
+// el primer mes del niño en el padrón.
+app.post("/api/padron_mensual/cierre", async (req, res)=>{
+	try{
+		let usuario=leerToken(req);
+		exigirRol(usuario, ["administrador"]);
+		let hoy=fechaHoy();
+		let periodo=hoy.slice(0, 8)+"01";
+		let [resultado]=await db.query(
+			"INSERT IGNORE INTO padron_mensual (periodo, infante_id, estancia_id, estatus_id, inscripcion_inicial) "+
+			"SELECT ?, i.id, s.estancia_id, i.estatus_id, "+
+			"NOT EXISTS (SELECT 1 FROM padron_mensual p WHERE p.infante_id = i.id AND p.periodo < ?) "+
+			"FROM infantes i JOIN salas s ON s.id = i.sala_id WHERE i.activo = TRUE",
+			[periodo, periodo]
+		);
+		await log(usuario.usuario, "cierre de mes", "/padron_mensual "+periodo);
+		res.json({periodo: periodo, agregados: resultado.affectedRows});
+	}catch(error){
+		responderError(error, res);
+	}
+});
+
 // NUEVO: aviso de privacidad vigente (AvisoPrivacidad.tsx pide el id "vigente").
 app.get("/api/avisos_privacidad/vigente", async (req, res)=>{
 	try{
@@ -1022,6 +1103,8 @@ registrarRutas("mi_asistencia", mi_asistencia);
 registrarRutas("bandeja_seguimientos", bandeja_seguimientos);
 registrarRutas("alta_pendiente", alta_pendiente);
 registrarRutas("mi_historial", mi_historial);
+registrarRutas("movimientos", movimientos);
+registrarRutas("padron_mensual", padron_mensual);
 
 // NUEVO: no hay rutas DELETE. El profe borraba registros; en SIRAI se usa baja
 // lógica (activo = FALSE) y nadie tiene permiso "delete" en src/permisos.ts.
