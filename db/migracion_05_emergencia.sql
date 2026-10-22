@@ -1,0 +1,1 @@
+ALTER TABLE infante_tutor ADD COLUMN contact_emergencia BOOLEAN NOT NULL DEFAULT FALSE;

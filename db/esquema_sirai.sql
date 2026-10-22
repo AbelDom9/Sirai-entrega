@@ -166,6 +166,7 @@ CREATE TABLE infante_tutor (
   tutor_id            INT UNSIGNED NOT NULL,
   parentesco          VARCHAR(40)  NOT NULL,
   autorizado_recoger  BOOLEAN      NOT NULL DEFAULT FALSE,
+  contact_emergencia     BOOLEAN      NOT NULL DEFAULT FALSE,
   FOREIGN KEY (infante_id) REFERENCES infantes(id),
   FOREIGN KEY (tutor_id)   REFERENCES tutores(id),
   UNIQUE KEY (infante_id, tutor_id)
@@ -212,6 +213,9 @@ CREATE TABLE asistencias (
   incidencia   VARCHAR(255) NULL,
   usuario_id   INT UNSIGNED NOT NULL,              -- quién pasó lista
   registrado   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  hora_entrada TIME NULL,
+  hora_salida TIME NULL,
+  metodo VARCHAR(10) not null default 'manual',
   CHECK (turno IN ('matutino', 'vespertino')),
   FOREIGN KEY (infante_id)  REFERENCES infantes(id),
   FOREIGN KEY (sala_id)     REFERENCES salas(id),
@@ -338,6 +342,8 @@ SELECT
   CONCAT(e.id, '-', r.periodo)                             AS id,
   e.id                                                     AS estancia_id,
   e.nombre                                                 AS estancia_nombre,
+  e.estado                                                 AS estado,
+  e.ur                                                     AS ur,
   r.periodo                                                AS periodo,
   CAST(CONCAT(r.periodo, '-01') AS DATE)                   AS fecha_inicio,
   COUNT(*)                                                 AS total_registros,
@@ -347,13 +353,12 @@ SELECT
   ROUND(100 * SUM(r.codigo IN ('presente', 'filtro_salud')) / COUNT(*), 1)
                                                            AS porcentaje_asistencia
 FROM (
-  -- Primero se calcula el mes de cada registro; luego se agrupa.
   SELECT a.estancia_id, DATE_FORMAT(a.fecha, '%Y-%m') AS periodo, c.codigo
   FROM asistencias a
   JOIN cat_estado_asistencia c ON a.estado_id = c.id
 ) AS r
 JOIN estancias e ON r.estancia_id = e.id
-GROUP BY e.id, e.nombre, r.periodo;
+GROUP BY e.id, e.nombre, r.periodo, e.estado, e.ur;
 
 -- Recurso "mi_asistencia" (tutor): una fila por hijo con su asistencia del
 -- mes actual y el estado de hoy. La API DEBE filtrar con

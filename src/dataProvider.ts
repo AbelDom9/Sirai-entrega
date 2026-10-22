@@ -12,12 +12,13 @@ export type PaseListaPayload = {
   estancia_id: Identifier;
   fecha: string;
   turno: string;
-  registros: { infante_id: Identifier; estado_id: Identifier; incidencia: string }[];
+  registros: { infante_id: Identifier; estado_id: Identifier; incidencia: string, hora_entrada?: string }[];
 };
 
 // NUEVO: extendemos el proveedor estándar con una operación propia de SIRAI.
 export type SiraiDataProvider = DataProvider & {
   guardarPaseLista: (datos: PaseListaPayload) => Promise<unknown>;
+  registrarSalida: (asistenciaId: Identifier) => Promise<{ id: Identifier; hora_salida: string }>;
 };
 
 export const dataProvider: SiraiDataProvider = {
@@ -29,6 +30,13 @@ export const dataProvider: SiraiDataProvider = {
     const { json } = await httpClient(`${apiUrl}/asistencias/lote`, {
       method: "POST",
       body: JSON.stringify(datos),
+    });
+    return json;
+  },
+  registrarSalida: async (asistenciaId) => {
+    const { json } = await httpClient(`${apiUrl}/asistencias/${asistenciaId}/salida`, {
+      method: "PATCH",
+      body: JSON.stringify({}),
     });
     return json;
   },

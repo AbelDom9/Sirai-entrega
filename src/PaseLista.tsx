@@ -6,7 +6,7 @@ import { Alert, Box, Button, Card, CardContent, MenuItem, Stack, TextField, Typo
 import type { SiraiDataProvider } from "./dataProvider";
 
 type Infante = RaRecord & { nombre: string; apellidos: string };
-type Marca = { estado_id: string; incidencia: string };
+type Marca = { estado_id: string; incidencia: string, hora_entrada?: string, hora_salida?: string, asistencia_id?: Identifier };
 
 // NUEVO: usamos la fecha local para que el día no cambie por la zona horaria UTC.
 const fechaLocal = () => {
@@ -94,7 +94,7 @@ export const PaseLista = () => {
         const inicial: Record<string, Marca> = {};
         niños.forEach((niño) => {
           const anterior = anteriores.find((registro) => String(registro.infante_id) === String(niño.id));
-          inicial[String(niño.id)] = { estado_id: anterior ? String(anterior.estado_id) : "", incidencia: anterior?.incidencia ?? "" };
+          inicial[String(niño.id)] = { estado_id: anterior ? String(anterior.estado_id) : "", incidencia: anterior?.incidencia ?? "", hora_entrada: anterior?.hora_entrada ? String(anterior.hora_entrada).slice(0, 5) : "", hora_salida: anterior?.hora_salida ? String(anterior.hora_salida).slice(0, 5) : "", asistencia_id: anterior?.id };
         });
         setInfantes(niños as Infante[]);
         setMarcas(inicial);
@@ -136,6 +136,19 @@ export const PaseLista = () => {
     setCambios(true);
   };
 
+const registrarSalida = async(niño: Infante) => {
+   const marca = marcas[String(niño.id)];
+    if (!marca?.asistencia_id) return;
+    try {
+      const respuesta = await provider.registrarSalida(marca.asistencia_id);
+      setMarcas((actuales) => ({ ...actuales, [String(niño.id)]: { ...actuales[String(niño.id)], hora_salida: respuesta.hora_salida } }));
+      notify(`Salida de ${niño.nombre} registrada a las ${respuesta.hora_salida}.`, { type: "success" });
+    } catch (e) {
+      notify(e instanceof Error ? e.message : "No se pudo registrar la salida.", { type: "error" });
+    }
+  };
+
+
   const guardar = async () => {
     if (!listo || !seleccionSala || !cambios) return;
     if (infantes.some((niño) => !marcas[String(niño.id)]?.estado_id)) {
@@ -151,6 +164,7 @@ export const PaseLista = () => {
           infante_id: niño.id,
           estado_id: estados.data!.find((estado) => String(estado.id) === marcas[String(niño.id)].estado_id)!.id,
           incidencia: marcas[String(niño.id)].incidencia,
+          hora_entrada: marcas[String(niño.id)].hora_entrada || undefined,
         })),
       });
       setCambios(false);
@@ -206,7 +220,16 @@ export const PaseLista = () => {
                 ))}
               </TextField>
               <TextField label={`Incidencia de ${niño.nombre} ${niño.apellidos}`} value={marcas[String(niño.id)]?.incidencia ?? ""} disabled={!listo} onChange={(e) => actualizar(niño.id, "incidencia", e.target.value)} fullWidth />
+            
+              <TextField type="time" label={`Hora de entrada de ${niño.nombre}`} value={marcas[String(niño.id)]?.hora_entrada ?? ""} disabled={!listo} onChange={(e) => actualizar(niño.id, "hora_entrada", e.target.value)} slotProps={{ inputLabel: { shrink: true } }} helperText="Vacía: hora actual" sx={{ minWidth: 170 }} />
             </Stack>
+            
+            {marcas[String(niño.id)]?.hora_salida && <Typography sx={{ mt: 1 }}>Salida: {marcas[String(niño.id)].hora_salida} · Método: manual</Typography>}
+            {rol === "doctor_asesor" && marcas[String(niño.id)]?.asistencia_id && marcas[String(niño.id)]?.hora_entrada && !cambios && (
+              <Button size="small" sx={{ mt: 1 }} onClick={() => registrarSalida(niño)}>
+                {marcas[String(niño.id)]?.hora_salida ? "Corregir salida a la hora actual" : "Registrar salida"}
+              </Button>
+            )}
           </CardContent></Card>
         ))}
       </Stack>
