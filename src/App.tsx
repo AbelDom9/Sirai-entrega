@@ -27,6 +27,7 @@ import { AvisoPrivacidad } from "./AvisoPrivacidad";
 import { Acceso } from "./Acceso";
 import { RolesPermisos } from "./RolesPermisos";
 import { Layout } from "./Layout";
+import { LoginPersonalizado } from "./LoginPersonalizado";
 import { Dashboard } from "./Dashboard";
 import { dataProvider } from "./dataProvider";
 import { authProvider } from "./authProvider";
@@ -128,7 +129,7 @@ const AppConTema = () => {
   const store = useStoreContext();
 
   return (
-  <Admin store={store} theme={altoContraste ? temaAltoContraste : temaClaro} darkTheme={altoContraste ? temaAltoContraste : temaOscuro} defaultTheme="light" requireAuth title="SIRAI" layout={Layout} dashboard={Dashboard} dataProvider={dataProvider} authProvider={authProvider} i18nProvider={i18nProvider}>
+  <Admin store={store} loginPage={LoginPersonalizado} theme={altoContraste ? temaAltoContraste : temaClaro} darkTheme={altoContraste ? temaAltoContraste : temaOscuro} defaultTheme="light" requireAuth title="SIRAI" layout={Layout} dashboard={Dashboard} dataProvider={dataProvider} authProvider={authProvider} i18nProvider={i18nProvider}>
     {/* Como en test-admin: cada Resource conecta una lista y sus formularios con la API. */}
     <Resource name="infantes" options={{ label: "Infantes" }} list={InfanteList} create={InfanteCreate} edit={InfanteEdit} icon={ChildCareIcon} recordRepresentation={nombreCompleto} />
     <Resource name="estancias" options={{ label: "Estancias" }} list={EstanciaList} create={EstanciaCreate} edit={EstanciaEdit} icon={SchoolIcon} recordRepresentation="nombre" />
