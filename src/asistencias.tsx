@@ -2,6 +2,9 @@ import { DataTable, DateField, DateInput, List, ReferenceField, ReferenceInput, 
 
 export const AsistenciaList = () => (
   // NUEVO: sort establece el orden inicial; la API realiza la ordenación.
+  // Esto lo hacemos para que la primera página de resultados se muestre ordenada por fecha descendente.
+
+  //Se utilizo IA para encontrar la forma de hacer que la tabla sea responsive y se pueda hacer scroll horizontal en pantallas pequeñas.
   <List exporter={false} sort={{ field: "fecha", order: "DESC" }} filters={[
     <DateInput key="fecha" source="fecha" label="Fecha" alwaysOn />,
     <ReferenceInput key="infante" source="infante_id" reference="infantes"><SelectInput label="Infante" optionText="nombre" /></ReferenceInput>,

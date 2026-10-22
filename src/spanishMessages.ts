@@ -2,6 +2,7 @@ import type { TranslationMessages } from "react-admin";
 
 // Mensajes compartidos por el login y las peticiones a la API.
 // Se exportan porque httpClient no es un componente y no puede usar useTranslate.
+//Para este apartado se utilizo IA, para traducir los mensajes de error y hacerlos más amigables para el usuario final. En base al trabajo realizado con Lizz
 export const mensajesError = {
     conexion: 'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo nuevamente.',
     credenciales: 'Usuario o contraseña incorrectos.',
