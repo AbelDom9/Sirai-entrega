@@ -44,7 +44,6 @@ export const AvisoPrivacidad = () => {
       {isPending && <Typography role="status">Cargando aviso…</Typography>}
       {(error || (!isPending && !aviso?.texto)) && <Alert severity="error">El aviso vigente no está disponible. El consentimiento permanece deshabilitado.</Alert>}
       {aviso?.texto && <>
-        <Typography gutterBottom>Versión: {aviso.version}</Typography>
         {/* NUEVO: whiteSpace conserva los saltos del texto sin inyectar HTML. */}
         <Typography sx={{ whiteSpace: "pre-wrap", my: 2 }}>{aviso.texto}</Typography>
         <FormControlLabel control={<Checkbox checked={acepta} disabled={!puedeAceptar || guardando || versionAceptada === version} onChange={(e) => setAcepta(e.target.checked)} />} label="He leído el aviso de privacidad y otorgo mi consentimiento" />
