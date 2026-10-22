@@ -176,6 +176,13 @@ const infantes={
 		if(usuario.rol=="doctor_asesor") return {sql: "sala_id IN (SELECT id FROM salas WHERE estancia_id = ?)", valores: [usuario.estancia_id]};
 		return {sql: "id IN (SELECT infante_id FROM infante_tutor WHERE tutor_id = ?)", valores: [usuario.tutor_id]};
 	},
+	// El formulario de Infantes no pide la fecha de inscripción: si no viene,
+	// se usa la fecha de hoy (la columna es obligatoria en la base).
+	validar: async (usuario, valores, cuerpo, esNuevo)=>{
+		if(esNuevo && !valores.fecha_registro){
+			valores.fecha_registro=fechaHoy();
+		}
+	},
 	// NUEVO (RF-11): cada alta, cambio y baja queda en la tabla movimientos.
 	despuesDeCrear: async (valores, usuario, id)=>{
 		await registrarMovimiento(id, "ALTA", null, null, usuario);
