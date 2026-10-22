@@ -1,12 +1,38 @@
-import { List, DataTable, TextInput, Create, Edit, SimpleForm, EditButton, ReferenceInput, ReferenceField, SelectInput, required } from "react-admin";
+import { List, DataTable, SimpleList, TextInput, Create, Edit, SimpleForm, EditButton, ReferenceInput, ReferenceField, SelectInput, required } from "react-admin";
+import { Box, useMediaQuery } from "@mui/material";
+import type { Theme } from "@mui/material";
 import { GuardarToolbar } from "./GuardarToolbar";
 import { email, minLength, PasswordInput } from "react-admin";
 
 const filtros = [<TextInput key="q" source="q" label="Buscar" alwaysOn />];
 
-export const UsuarioList = () => (
+export const UsuarioList = () => {
+  const esCelular = useMediaQuery<Theme>((theme) => theme.breakpoints.down("sm"));
+
+  return (
   <List filters={filtros} exporter={false}>
-    {/* NUEVO: el contenedor permite desplazar la tabla en pantallas pequeñas. */}
+    {esCelular ? (
+      <SimpleList
+        primaryText={(record) => record.nombre}
+        secondaryText={(record) => (
+          <Box component="span" sx={{ display: "block", overflowWrap: "anywhere" }}>
+            <Box component="span" sx={{ display: "block" }}>Correo: {record.correo}</Box>
+            <Box component="span" sx={{ display: "block" }}>
+              Rol: <ReferenceField source="rol_id" reference="roles" record={record} link={false} emptyText="Sin rol" />
+            </Box>
+            <Box component="span" sx={{ display: "block" }}>
+              Estancia: <ReferenceField source="estancia_id" reference="estancias" record={record} link={false} emptyText="Sin estancia" />
+            </Box>
+            <Box component="span" sx={{ display: "block" }}>Toca para editar</Box>
+          </Box>
+        )}
+        linkType="edit"
+        sx={{
+          "& .MuiListItem-root": { mb: 1, border: "1px solid", borderColor: "divider", borderRadius: 1 },
+          "& .MuiListItemText-root": { minWidth: 0, overflowWrap: "anywhere" },
+        }}
+      />
+    ) : (
     <div style={{ overflowX: "auto" }}>
       <DataTable bulkActionButtons={false}>
         <DataTable.Col source="nombre" label="Nombre" />
@@ -20,8 +46,10 @@ export const UsuarioList = () => (
         <DataTable.Col label="Acciones"><EditButton /></DataTable.Col>
       </DataTable>
     </div>
+    )}
   </List>
-);
+  );
+};
 
 // NUEVO: un componente de campos compartidos evita duplicar crear y editar.
 const UsuarioInputs = () => (
