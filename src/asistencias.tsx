@@ -10,10 +10,10 @@ export const AsistenciaList = () => (
     <ReferenceInput key="infante" source="infante_id" reference="infantes"><SelectInput label="Infante" optionText="nombre" /></ReferenceInput>,
   ]}>
 
-  // https://marmelab.com/react-admin/DataTable.html
-  // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/overflow-x
-  // Utilizamos Ia en este apartado, para Muestra los registros en una tabla con fechas y datos relacionados, sin acciones masivas ni navegación al pulsar las filas, 
-  //ademas de permitir desplazarse horizontalmente cuando no cabe en la pantalla
+  {/* https://marmelab.com/react-admin/DataTable.html */}
+  {/* https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/overflow-x */}
+  {/* Utilizamos Ia en este apartado, para Muestra los registros en una tabla con fechas y datos relacionados, sin acciones masivas ni navegación al pulsar las filas, */}
+  {/* ademas de permitir desplazarse horizontalmente cuando no cabe en la pantalla */}
 
     <div style={{ overflowX: "auto" }}>
       <DataTable bulkActionButtons={false} rowClick={false}>

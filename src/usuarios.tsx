@@ -82,8 +82,8 @@ export const UsuarioCreate = () => (
     <SimpleForm warnWhenUnsavedChanges toolbar={<GuardarToolbar />}>
       <UsuarioInputs />
 
-      // En este apartado se utilizo IA para encontrar la forma de hacer que la contraseña tenga un mínimo de 8 caracteres 
-      // y que se pueda ocultar lo que se escribe en el campo de contraseña.
+      {/* En este apartado se utilizo IA para encontrar la forma de hacer que la contraseña tenga un mínimo de 8 caracteres */}
+      {/* y que se pueda ocultar lo que se escribe en el campo de contraseña. */}
       {/* NUEVO: PasswordInput oculta lo que se escribe. La API la guarda cifrada
           con argon2 y nunca la devuelve. */}
       <PasswordInput source="password" label="Contraseña inicial" validate={[required(), minLength(8)]} />
@@ -96,8 +96,8 @@ export const UsuarioEdit = () => (
     <SimpleForm warnWhenUnsavedChanges toolbar={<GuardarToolbar />}>
       <TextInput source="id" label="ID" disabled />
       <UsuarioInputs />
-      // https://marmelab.com/react-admin/PasswordInput.html
-      // La utilizams por si el usuario quiere cambiar su contraseña, si no la cambia, la deja vacía y no se modifica.
+      {/* https://marmelab.com/react-admin/PasswordInput.html */}
+      {/* La utilizams por si el usuario quiere cambiar su contraseña, si no la cambia, la deja vacía y no se modifica. */}
     
       <PasswordInput source="password" label="Nueva contraseña (dejar vacía para no cambiarla)" validate={minLength(8)} />
       {/* NUEVO (RF-05): desactivar en lugar de borrar (baja lógica). */}
