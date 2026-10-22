@@ -1,4 +1,24 @@
-import { DataTable, DateField, DateInput, EditButton, List, SelectInput, TextInput } from "react-admin";
+import { Button, DataTable, DateField, DateInput, EditButton, List, SelectInput, TextInput, useNotify, useRecordContext, useRefresh } from "react-admin";
+import { API_URL, httpClient } from "./sesion";
+
+// NUEVO (RF-24): botón que registra un intento de llamada al tutor.
+// useRecordContext da el renglón actual; useRefresh vuelve a cargar la lista.
+const BotonIntento = () => {
+  const registro = useRecordContext();
+  const notify = useNotify();
+  const refresh = useRefresh();
+  if (!registro || registro.estado === "cerrado") return null;
+  const registrar = async () => {
+    try {
+      await httpClient(`${API_URL}/seguimientos/${registro.id}/intento`, { method: "POST" });
+      notify("Intento de llamada registrado.", { type: "success" });
+      refresh();
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "No se pudo registrar el intento.", { type: "error" });
+    }
+  };
+  return <Button label="Registrar intento de llamada" onClick={registrar} />;
+};
 // Se utilizo IA para poder implementar la bandeja de faltas del doctor/asesor, ya que nos ayudo a 
 // encontrar la forma de mostrar los registros en una tabla con fechas y datos relacionados, 
 // sin acciones masivas ni navegación al pulsar las filas, ademas de permitir desplazarse 
@@ -43,11 +63,16 @@ export const BandejaList = () => (
         <DataTable.Col source="tipo_falta" label="Tipo de falta" />
         {/* RF-22: datos para llamar. Incluye a todos los tutores con su parentesco y teléfono. */}
         <DataTable.Col source="contactos" label="Contactos del tutor" />
+        {/* RF-24, RF-25 y RF-26 (simplificados): aviso escrito y contactos de emergencia. */}
+        <DataTable.Col source="alerta" label="Alerta" />
+        <DataTable.Col source="contactos_emergencia" label="Contactos de emergencia" />
+        <DataTable.Col source="intentos" label="Intentos de llamada" />
         <DataTable.Col source="estado" label="Estado" />
         <DataTable.Col label="Acciones">
           {/* NUEVO: resource="seguimientos" hace que el botón abra el seguimiento
               (mismo id) para anotar la llamada, la causa, el retorno y el alta. */}
           <EditButton resource="seguimientos" label="Atender" />
+          <BotonIntento />
         </DataTable.Col>
       </DataTable>
     </div>

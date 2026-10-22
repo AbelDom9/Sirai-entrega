@@ -54,7 +54,7 @@ const HistorialHijo = ({ infanteId }: { infanteId: Identifier }) => {
       <Stack spacing={1}>
         {historial.data?.map((registro) => (
           <Stack key={registro.id} direction="row" spacing={2} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-            <Typography>{fechaVisible(registro.fecha)} · {registro.turno === "vespertino" ? "Vespertino" : "Matutino"} · {registro.estado_nombre}</Typography>
+            <Typography>{fechaVisible(registro.fecha)} · {registro.turno === "vespertino" ? "Vespertino" : "Matutino"} · {registro.estado_nombre}{registro.hora_entrada ? ` · Llegada ${String(registro.hora_entrada).slice(0, 5)}` : ""}</Typography>
             {!!registro.es_falta && !!registro.justificada && <Typography color="text.secondary">(justificada)</Typography>}
             {!!registro.es_falta && !registro.justificada && (
               <Button variant="outlined" size="small" onClick={() => abrir(registro)}>Justificar falta del {fechaVisible(registro.fecha)}</Button>

@@ -118,6 +118,18 @@ function responderError(error, res){
 //   ocultas:   columnas que un rol no debe recibir.
 //   validar:   función opcional que revisa o completa los datos antes de guardar.
 
+// NUEVO (RF-10): en los catálogos, al EDITAR se ignora "codigo" (solo se cambia
+// el nombre visible). Al crear, el código es obligatorio.
+async function protegerCodigo(usuario, valores, cuerpo, esNuevo){
+	if(esNuevo){
+		if(!valores.codigo){
+			throw errorHttp(400);
+		}
+	}else{
+		delete valores.codigo;
+	}
+}
+
 const TODOS=["administrador", "profesor", "doctor_asesor", "tutor"];
 
 // NUEVO: atajo para "sin restricción de filas".
@@ -233,7 +245,9 @@ const roles={
 	busqueda: ["nombre"],
 	leer: ["administrador"],
 	crear: [],
-	modificar: [],
+	modificar: ["administrador"],
+	// RF-10: el código no se cambia al editar (las reglas de la API dependen de él).
+	validar: protegerCodigo,
 	alcance: ()=>sinFiltro
 };
 
@@ -242,8 +256,10 @@ const estatus_infante={
 	columnas: ["id", "codigo", "nombre"],
 	busqueda: ["nombre"],
 	leer: ["administrador", "profesor"],
-	crear: [],
-	modificar: [],
+	crear: ["administrador"],
+	modificar: ["administrador"],
+	// RF-10: el código no se cambia al editar (las reglas de la API dependen de él).
+	validar: protegerCodigo,
 	alcance: ()=>sinFiltro
 };
 
@@ -252,8 +268,10 @@ const cat_estado_asistencia={
 	columnas: ["id", "codigo", "nombre"],
 	busqueda: ["nombre"],
 	leer: TODOS,
-	crear: [],
-	modificar: [],
+	crear: ["administrador"],
+	modificar: ["administrador"],
+	// RF-10: el código no se cambia al editar (las reglas de la API dependen de él).
+	validar: protegerCodigo,
 	alcance: ()=>sinFiltro
 };
 
@@ -264,8 +282,10 @@ const motivos_falta={
 	columnas: ["id", "codigo", "nombre"],
 	busqueda: ["nombre"],
 	leer: TODOS,
-	crear: [],
-	modificar: [],
+	crear: ["administrador"],
+	modificar: ["administrador"],
+	// RF-10: el código no se cambia al editar (las reglas de la API dependen de él).
+	validar: protegerCodigo,
 	alcance: ()=>sinFiltro
 };
 
@@ -377,7 +397,7 @@ const reportes_asistencia={
 // Solo de lectura; "desde" filtra por fecha (la tarjeta pide el mes actual).
 const mi_historial={
 	tabla: "mi_historial",
-	columnas: ["id", "infante_id", "tutor_id", "fecha", "turno", "estado_codigo", "estado_nombre", "es_falta", "justificada"],
+	columnas: ["id", "infante_id", "tutor_id", "fecha", "turno", "hora_entrada", "estado_codigo", "estado_nombre", "es_falta", "justificada"],
 	busqueda: [],
 	columnaFecha: "fecha",
 	leer: ["tutor"],
@@ -418,7 +438,7 @@ const alta_pendiente={
 const bandeja_seguimientos={
 	tabla: "bandeja_seguimientos",
 	columnas: ["id", "asistencia_id", "estancia_id", "fecha", "turno", "infante_nombre", "sala_nombre",
-		"tipo_falta", "estado", "causa", "fecha_retorno", "contactos"],
+		"tipo_falta", "estado", "causa", "fecha_retorno", "intentos", "contactos", "contactos_emergencia", "alerta"],
 	busqueda: ["infante_nombre", "sala_nombre"],
 	leer: ["doctor_asesor"],
 	crear: [],
@@ -922,6 +942,28 @@ app.put("/api/asistencias/:id/salida", async (req, res)=>{
 		await db.query("UPDATE asistencias SET hora_salida = ? WHERE id = ?", [horaSalida, asistencia.id]);
 		await log(usuario.usuario, "registrar salida", "/asistencias/"+asistencia.id+"/salida "+horaSalida);
 		res.json({id: asistencia.id, hora_salida: horaSalida});
+	}catch(error){
+		responderError(error, res);
+	}
+});
+
+// NUEVO (RF-24): el doctor/asesor registra un intento de llamada al tutor.
+// Suma 1 a "intentos" y guarda la hora; la bandeja usa esa hora para avisar
+// del segundo intento dentro de 4 horas.
+app.post("/api/seguimientos/:id/intento", async (req, res)=>{
+	try{
+		let usuario=leerToken(req);
+		exigirRol(usuario, ["administrador", "doctor_asesor"]);
+		let alcance=seguimientos.alcance(usuario);
+		let [resultado]=await db.query(
+			"UPDATE seguimientos SET intentos = intentos + 1, ultimo_intento = NOW() WHERE "+alcance.sql+" AND id = ?",
+			[...alcance.valores, req.params.id]
+		);
+		if(resultado.affectedRows==0){
+			throw errorHttp(404);
+		}
+		await log(usuario.usuario, "intento de llamada", "/seguimientos/"+req.params.id);
+		res.json({id: Number(req.params.id)});
 	}catch(error){
 		responderError(error, res);
 	}

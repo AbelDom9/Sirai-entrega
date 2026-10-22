@@ -253,6 +253,8 @@ CREATE TABLE seguimientos (
   requiere_alta     BOOLEAN      NOT NULL DEFAULT FALSE,
   fecha_alta        DATE         NULL,
   estado            VARCHAR(12)  NOT NULL DEFAULT 'pendiente',
+  intentos          TINYINT UNSIGNED NOT NULL DEFAULT 0,   -- llamadas al tutor (RF-24)
+  ultimo_intento    DATETIME     NULL,
   CHECK (estado IN ('pendiente', 'contactado', 'cerrado')),
   FOREIGN KEY (asistencia_id)  REFERENCES asistencias(id),
   FOREIGN KEY (responsable_id) REFERENCES usuarios(id),
@@ -408,18 +410,40 @@ SELECT
   s.estado                                                 AS estado,
   s.causa                                                  AS causa,
   s.fecha_retorno                                          AS fecha_retorno,
+  s.intentos                                               AS intentos,
   (SELECT GROUP_CONCAT(
             CONCAT(t.nombre, ' ', t.apellidos, ' (', it.parentesco, '): ',
                    COALESCE(t.telefono, 'sin teléfono'))
             ORDER BY it.id SEPARATOR '; ')
      FROM infante_tutor it
      JOIN tutores t ON t.id = it.tutor_id
-    WHERE it.infante_id = i.id)                            AS contactos
+    WHERE it.infante_id = i.id)                            AS contactos,
+  -- RF-25: solo los marcados como contacto de emergencia.
+  (SELECT GROUP_CONCAT(
+            CONCAT(t.nombre, ' ', t.apellidos, ': ', COALESCE(t.telefono, 'sin teléfono'))
+            ORDER BY it.id SEPARATOR '; ')
+     FROM infante_tutor it
+     JOIN tutores t ON t.id = it.tutor_id
+    WHERE it.infante_id = i.id AND it.contact_emergencia = TRUE) AS contactos_emergencia,
+  -- RF-24, RF-25 y RF-26 (versión simplificada, SRS §6.7): aviso escrito.
+  CASE
+    WHEN s.estado = 'cerrado' THEN NULL
+    WHEN m.codigo = 'NO_LOC' AND s.intentos = 1
+      THEN CONCAT('Tutor no localizado. Segundo intento antes de las ',
+                  DATE_FORMAT(s.ultimo_intento + INTERVAL 4 HOUR, '%H:%i'),
+                  '. Avisar a los contactos de emergencia.')
+    WHEN m.codigo = 'NO_LOC'
+      THEN 'Tutor no localizado. Avisar a los contactos de emergencia.'
+    WHEN m.codigo = 'ACC_EXT'
+      THEN 'Expediente de accidente: anotar indicaciones de cuidado y plan de regreso.'
+    ELSE NULL
+  END                                                      AS alerta
 FROM seguimientos s
 JOIN asistencias a           ON a.id = s.asistencia_id
 JOIN infantes i              ON i.id = a.infante_id
 JOIN salas sl                ON sl.id = a.sala_id
-JOIN cat_estado_asistencia c ON c.id = a.estado_id;
+JOIN cat_estado_asistencia c ON c.id = a.estado_id
+LEFT JOIN motivos_falta m    ON m.id = s.motivo_id;
 
 -- Recurso "alta_pendiente" (RF-27 y RN-04): niños que no pueden marcarse
 -- Presente ni Filtro de salud porque tienen un seguimiento que requiere alta
@@ -448,6 +472,7 @@ SELECT
   it.tutor_id                                              AS tutor_id,
   a.fecha                                                  AS fecha,
   a.turno                                                  AS turno,
+  a.hora_entrada                                           AS hora_entrada,
   c.codigo                                                 AS estado_codigo,
   c.nombre                                                 AS estado_nombre,
   (c.codigo IN ('falta_justificada', 'falta_injustificada', 'licencia_medica')) AS es_falta,
