@@ -1,14 +1,20 @@
 import { useState } from "react";
 import { Title, useGetOne, useDataProvider, useNotify, useCanAccess } from "react-admin";
 import { Alert, Box, Button, Checkbox, FormControlLabel, Typography } from "@mui/material";
+//Para poder realizar el Aviso de privacidad y consentimiento, utilizamos IA
+// Para la investigación de hooks de React-admin, se consultó la documentación oficial de React-admin y se encontró que useGetOne 
+// es un hook que permite obtener un único registro de un recurso, en este caso el aviso vigente aprobado por ISSSTE.
 
 export const AvisoPrivacidad = () => {
-  // NUEVO: useGetOne pide un único registro, aquí el aviso vigente aprobado por ISSSTE.
+  // useGetOne pide un único registro, aquí el aviso vigente aprobado por ISSSTE.
   const { data: aviso, isPending, error } = useGetOne("avisos_privacidad", { id: "vigente" });
   const provider = useDataProvider();
   const notify = useNotify();
   // NUEVO: ver el aviso no equivale a poder registrar el consentimiento de un tutor.
-  const { canAccess: puedeAceptar } = useCanAccess({ resource: "consentimientos", action: "create" });
+  // Hook Nuevo  useCanAccess para comprobar si el usuario tiene permiso para crear un consentimiento.
+  //https://marmelab.com/react-admin/useCanAccess.html
+
+  const { canAccess: puedeAceptar } = useCanAccess ({ resource: "consentimientos", action: "create" });
   const [acepta, setAcepta] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [versionAceptada, setVersionAceptada] = useState<string | null>(null);
@@ -28,6 +34,9 @@ export const AvisoPrivacidad = () => {
   };
 
   return (
+    //Se obtiene de la API el aviso de privacidad y consentimiento, si no hay aviso vigente, se muestra un mensaje de error
+    // Se utilizo copilot para poder implementar el aviso de privacidad y consentimiento, ya que nos ayudo a encontrar la forma de obtener el aviso vigente de la API y
+    //  mostrarlo en la pantalla, ademas de permitir registrar el consentimiento del tutor.
     <Box sx={{ p: 2 }}>
       <Title title="Aviso de privacidad" />
       <Typography component="h1" variant="h5" gutterBottom>Aviso de privacidad y consentimiento</Typography>

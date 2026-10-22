@@ -1,8 +1,14 @@
 import { DataTable, DateField, DateInput, EditButton, List, SelectInput, TextInput } from "react-admin";
+// Se utilizo IA para poder implementar la bandeja de faltas del doctor/asesor, ya que nos ayudo a 
+// encontrar la forma de mostrar los registros en una tabla con fechas y datos relacionados, 
+// sin acciones masivas ni navegación al pulsar las filas, ademas de permitir desplazarse 
+// horizontalmente cuando no cabe en la pantalla (Como en otras anteriores que ya se implementaron en este proyecto)
 
-// NUEVO: fecha de hoy en hora local ("2026-10-21") para el filtro inicial.
+
+// Estamos usando la fecha del dia de hoy 2026-10-21 para inicializar el filtro
 const fechaHoy = () => {
   const hoy = new Date();
+  //Formato de fecha YYYY-MM-DD para que React-admin lo use en el filtro de la bandeja
   return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
 };
 
@@ -14,6 +20,8 @@ const estadosSeguimiento = [
 ];
 
 // Filtros con etiqueta visible (RA-06): fecha, estado y búsqueda por nombre.
+//Requerimiento de Accesibilidad RA-06: los filtros deben tener etiqueta visible, no solo placeholder.
+// https://marmelab.com/react-admin/FilteringTutorial.html
 const filtros = [
   <DateInput key="fecha" source="fecha" label="Fecha de la falta" alwaysOn />,
   <SelectInput key="estado" source="estado" label="Estado del seguimiento" choices={estadosSeguimiento} alwaysOn />,
