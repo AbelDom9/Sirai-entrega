@@ -2,7 +2,7 @@ import { Login } from "react-admin";
 import { Box, Typography } from "@mui/material";
 
 export const LoginPersonalizado = () => (
-  <Box sx={{ position: "relative" }}>
+  <Box sx={{ position: "relative"}}>
     <Box sx={{ position: "absolute", top: 24, left: 0, right: 0, px: 2, color: "#611232", textAlign: "center" }}>
       <Typography component="h1" sx={{ fontSize: { xs: 48, sm: 64 }, fontWeight: 700, lineHeight: 1.1, mb: 1 }}>
         SIRAI
