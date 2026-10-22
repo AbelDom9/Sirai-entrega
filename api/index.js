@@ -187,7 +187,7 @@ const tutores={
 
 const infante_tutor={
 	tabla: "infante_tutor",
-	columnas: ["id", "infante_id", "tutor_id", "parentesco", "autorizado_recoger"],
+	columnas: ["id", "infante_id", "tutor_id", "parentesco", "autorizado_recoger", "contact_emergencia"],
 	busqueda: ["parentesco"],
 	leer: ["administrador"],
 	crear: ["administrador"],
@@ -272,7 +272,7 @@ const motivos_falta={
 // Las asistencias se crean con POST /api/asistencias/lote (pase de lista).
 const asistencias={
 	tabla: "asistencias",
-	columnas: ["id", "infante_id", "sala_id", "estancia_id", "fecha", "turno", "estado_id", "incidencia", "usuario_id", "registrado"],
+	columnas: ["id", "infante_id", "sala_id", "estancia_id", "fecha", "turno", "estado_id", "incidencia", "usuario_id", "registrado","hora_entrada", "hora_salida", "metodo"],
 	busqueda: ["incidencia"],
 	leer: TODOS,
 	crear: [],
@@ -362,7 +362,7 @@ const seguimientos={
 // Vista del esquema: cifras por estancia y mes, sin nombres de niños.
 const reportes_asistencia={
 	tabla: "reportes_asistencia",
-	columnas: ["id", "estancia_id", "estancia_nombre", "periodo", "fecha_inicio",
+	columnas: ["id", "estancia_id", "estancia_nombre", "periodo", "fecha_inicio", "estado", "ur",
 		"total_registros", "presentes", "ausentes", "porcentaje_asistencia"],
 	busqueda: ["estancia_nombre"],
 	// NUEVO: los filtros "desde" y "hasta" del frontend se comparan con esta columna.
@@ -850,22 +850,25 @@ app.post("/api/asistencias/lote", async (req, res)=>{
 			}
 		}
 		await log(usuario.usuario, "pase de lista", "/asistencias/lote sala "+sala_id+" "+fecha+" "+turno);
-		// NUEVO: getConnection toma una conexión del pool para la transacción.
 		conexion=await db.getConnection();
 		await conexion.beginTransaction();
 		for(let registro of registros){
-			// NUEVO: ON DUPLICATE KEY UPDATE: si ya existe la asistencia de ese niño,
-			// fecha y turno (llave única), se actualiza en lugar de duplicarse.
+			let horaEntrada=null;
+			if(idsEntrada.includes(Number(registro.estado_id))){
+				if(/^([01]\d|2[0-3]):[0-5]\d$/.test(registro.hora_entrada || "")){
+					horaEntrada=registro.hora_entrada;
+				}else{
+					horaEntrada=horaActual();
+				}
+			}
 			await conexion.query(
-				"INSERT INTO asistencias (infante_id, sala_id, estancia_id, fecha, turno, estado_id, incidencia, usuario_id) "+
-				"VALUES (?, ?, ?, ?, ?, ?, ?, ?) "+
-				"ON DUPLICATE KEY UPDATE estado_id = VALUES(estado_id), incidencia = VALUES(incidencia), usuario_id = VALUES(usuario_id)",
-				[registro.infante_id, sala_id, estancia_id, fecha, turno, registro.estado_id, registro.incidencia || null, usuario.usuario]
+			"INSERT INTO asistencias (infante_id, sala_id, estancia_id, fecha, turno, estado_id, incidencia, usuario_id, hora_entrada) "+
+				"VALUES (?, ?, ?, ?, ?, ?, ?, ?,?) "+
+				"ON DUPLICATE KEY UPDATE estado_id = VALUES(estado_id), incidencia = VALUES(incidencia), usuario_id = VALUES(usuario_id), hora_entrada = VALUES(hora_entrada)",
+				[registro.infante_id, sala_id, estancia_id, fecha, turno, registro.estado_id, registro.incidencia || null, usuario.usuario, horaEntrada]
 			);
 		}
 		await conexion.commit();
-		// NUEVO: si el turno ya estaba cerrado (corrección), se crean de una vez
-		// los seguimientos de las faltas que todavía no tengan uno.
 		let seguimientosCreados=0;
 		if(cerrado){
 			seguimientosCreados=await generarSeguimientos();
@@ -880,6 +883,47 @@ app.post("/api/asistencias/lote", async (req, res)=>{
 		if(conexion){
 			conexion.release();
 		}
+	}
+});
+app.put("/api/asistencias/:id/salida", async (req, res)=>{
+	try{
+		let usuario=leerToken(req);
+		// Solo el doctor/asesor registra la salida (decisión de diseño del equipo).
+		exigirRol(usuario, ["doctor_asesor"]);
+		// Se reutiliza el alcance de asistencias: el doctor solo ve su estancia.
+		// Si la asistencia es de otra estancia, responde 404.
+		let alcance=asistencias.alcance(usuario);
+		let [filas]=await db.query(
+			"SELECT id, fecha, hora_entrada, hora_salida FROM asistencias WHERE id = ? AND "+alcance.sql,
+			[req.params.id, ...alcance.valores]
+		);
+		if(filas.length==0){
+			throw errorHttp(404);
+		}
+		let asistencia=filas[0];
+		// Solo puede salir un niño que entró.
+		if(!asistencia.hora_entrada){
+			res.status(409).json({message: "No se puede registrar la salida de un niño que no entró"});
+			return;
+		}
+		// Hora enviada (HH:MM) o, si no viene, la hora del servidor.
+		let horaSalida=horaActual();
+		if(req.body.hora_salida!==undefined){
+			if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(req.body.hora_salida))){
+				throw errorHttp(400);
+			}
+			horaSalida=req.body.hora_salida;
+		}
+		// MySQL devuelve TIME como "08:30:00"; se comparan solo horas y minutos.
+		if(horaSalida<=String(asistencia.hora_entrada).slice(0, 5)){
+			res.status(400).json({message: "La salida debe ser después de la entrada ("+String(asistencia.hora_entrada).slice(0, 5)+")"});
+			return;
+		}
+		await db.query("UPDATE asistencias SET hora_salida = ? WHERE id = ?", [horaSalida, asistencia.id]);
+		await log(usuario.usuario, "registrar salida", "/asistencias/"+asistencia.id+"/salida "+horaSalida);
+		res.json({id: asistencia.id, hora_salida: horaSalida});
+	}catch(error){
+		responderError(error, res);
 	}
 });
 

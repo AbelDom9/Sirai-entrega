@@ -18,6 +18,7 @@ export const InfanteTutorList = () => (
         <DataTable.Col source="parentesco" label="Parentesco" />
         {/* NUEVO: BooleanField muestra un valor verdadero o falso. */}
         <DataTable.Col source="autorizado_recoger" label="Puede recoger"><BooleanField source="autorizado_recoger" /></DataTable.Col>
+        <DataTable.Col source="contact_emergencia" label="Contacto de emergencia"><BooleanField source="contact_emergencia" /></DataTable.Col>
         <DataTable.Col label="Acciones"><EditButton /></DataTable.Col>
       </DataTable>
     </div>
@@ -36,6 +37,7 @@ const InfanteTutorInputs = () => (
     <TextInput source="parentesco" label="Parentesco" validate={required()} />
     {/* NUEVO: BooleanInput captura una opción de sí o no. */}
     <BooleanInput source="autorizado_recoger" label="Autorizado para recoger" />
+    <BooleanInput source="contact_emergencia" label="Contacto de emergencia" />
   </>
 );
 

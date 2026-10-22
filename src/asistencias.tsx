@@ -12,6 +12,9 @@ export const AsistenciaList = () => (
         <DataTable.Col source="infante_id" label="Infante"><ReferenceField source="infante_id" reference="infantes" link={false} /></DataTable.Col>
         <DataTable.Col source="estancia_id" label="Estancia"><ReferenceField source="estancia_id" reference="estancias" link={false} /></DataTable.Col>
         <DataTable.Col source="estado_id" label="Estado"><ReferenceField source="estado_id" reference="cat_estado_asistencia" link={false} /></DataTable.Col>
+        <DataTable.Col source="hora_entrada" label="Entrada" />
+        <DataTable.Col source="hora_salida" label="Salida" />
+        <DataTable.Col source="metodo" label="Método" />
         <DataTable.Col source="turno" label="Turno" />
         <DataTable.Col source="incidencia" label="Incidencia" />
       </DataTable>
