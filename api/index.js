@@ -1,13 +1,10 @@
-// API de SIRAI.
-// Basada en backend/index.js del repositorio de clase (TC2007B-421-202624).
-// Se conserva su estructura: funciones genéricas getList, getMany,
-// getManyReference, getOne, updateData y createData, una ruta GET que decide
-// entre ellas, log() y /login con argon2 + jsonwebtoken.
+// API de SIRAI
+// Basada  del repositorio de que vimos en clase  (TC2007B-421-202624).
 //
 // Convenciones de comentarios en este archivo:
-//   "Como el profe:"          -> igual que el ejemplo de clase.
-//   "NUEVO:"                  -> concepto que no está en el ejemplo de clase.
-//   "CORRECCIÓN DEL EJEMPLO:" -> error del ejemplo de clase que aquí se corrige.
+//   "Como el profe:"          -> igual que a lo que vimos en eljemplo de clase.
+//   "NUEVO:"                  -> concepto que no está en el ejemplo de clase. Estas partes son investigaciones de Internet
+//								Ademas de que se pudo Utilizar IA para guiarnos sobre como hacerlas. 
 
 const express=require("express");
 // NUEVO: mysql2 reemplaza a mongodb porque SIRAI usa una base SQL (MySQL).
@@ -31,6 +28,7 @@ app.use(bodyParser.json());
 // Como el profe: la conexión se crea al iniciar, después de leer el .env.
 // NUEVO: createPool abre varias conexiones a MySQL y las reutiliza
 // (el profe usaba MongoClient). Los datos salen del .env, como en db.js de Capi.
+// https://sidorares.github.io/node-mysql2/docs/documentation/promise-wrapper
 async function connectToDB(){
 	db=mysql.createPool({
 		host: process.env.DB_HOST,
@@ -53,9 +51,8 @@ async function log(sujeto, accion, objeto){
 	await db.query("INSERT INTO log (sujeto, accion, objeto) VALUES (?, ?, ?)", [String(sujeto), accion, objeto]);
 }
 
-// =====================================================================
+
 // Token y roles
-// =====================================================================
 
 // Como el profe: el token llega en la cabecera "Authentication" y se verifica
 // con la llave LLAVEJWT del .env. Si no es válido, jwt.verify lanza un error.
@@ -81,7 +78,7 @@ function exigirRol(usuario, rolesPermitidos){
 	}
 }
 
-// NUEVO: responde según el error. El profe respondía 401 siempre.
+// responde según el error. Investgamos distitnos tipos de errores.
 function responderError(error, res){
 	let status=error.status || 500;
 	if(error.name=="JsonWebTokenError" || error.name=="TokenExpiredError"){
@@ -100,10 +97,8 @@ function responderError(error, res){
 	res.status(status).json({message: mensajes[status] || "No se pudo completar la operación. Inténtalo nuevamente más tarde."});
 }
 
-// =====================================================================
-// Configuración de cada tabla
-// =====================================================================
-//
+
+// En esta parte nos guiamos con IA como investigación.
 // NUEVO: cada recurso se describe con un objeto:
 //   tabla:     nombre de la tabla o vista en MySQL.
 //   columnas:  columnas que se pueden leer, ordenar, filtrar y guardar.
@@ -132,7 +127,7 @@ async function protegerCodigo(usuario, valores, cuerpo, esNuevo){
 
 const TODOS=["administrador", "profesor", "doctor_asesor", "tutor"];
 
-// NUEVO: atajo para "sin restricción de filas".
+// atajo para "sin restricción de filas".
 const sinFiltro={sql: "1=1", valores: []};
 
 const estancias={
@@ -183,6 +178,7 @@ const infantes={
 			valores.fecha_registro=fechaHoy();
 		}
 	},
+	// Se investigo como hacer los cambios. Se utilizo IA para guiarnos
 	// NUEVO (RF-11): cada alta, cambio y baja queda en la tabla movimientos.
 	despuesDeCrear: async (valores, usuario, id)=>{
 		await registrarMovimiento(id, "ALTA", null, null, usuario);
@@ -201,6 +197,7 @@ const infantes={
 };
 
 // NUEVO (RF-11): guarda un movimiento del infante con la fecha de hoy y quién lo hizo.
+// Se investigo como hacer los cambios. Se utilizo IA para guiarnos, y también para protegernos de inyecciones SQL
 // valor_antes / valor_despues guardan el id anterior y el nuevo (sala o estatus).
 async function registrarMovimiento(infanteId, tipo, antes, despues, usuario){
 	await db.query(
@@ -209,8 +206,7 @@ async function registrarMovimiento(infanteId, tipo, antes, despues, usuario){
 	);
 }
 
-// NUEVO (RF-11): consulta del historial de movimientos y del padrón mensual.
-// Solo de lectura y solo para el administrador.
+// Solo de lectura y solo para el administrador. 
 const movimientos={
 	tabla: "movimientos",
 	columnas: ["id", "infante_id", "fecha", "tipo", "valor_antes", "valor_despues", "usuario_id", "registrado"],
@@ -263,8 +259,10 @@ const infante_tutor={
 };
 
 // NUEVO: password_hash NO está en columnas: nunca se envía al navegador.
+// Para esta parte nos guiamos con IA para la implementación del algoritmo de seguridad.
 // Para crear o cambiar la contraseña, el formulario manda "password" y aquí
 // se guarda cifrada con argon2 (como /registrarse del profe).
+// Se utilizo el estandar OWASP, se utilizaron los 10 principios mas importantes
 const usuarios={
 	tabla: "usuarios",
 	columnas: ["id", "nombre", "correo", "rol_id", "estancia_id", "sala_id", "tutor_id", "activo"],
@@ -301,6 +299,7 @@ const roles={
 	leer: ["administrador"],
 	crear: [],
 	modificar: ["administrador"],
+
 	// RF-10: el código no se cambia al editar (las reglas de la API dependen de él).
 	validar: protegerCodigo,
 	alcance: ()=>sinFiltro
@@ -313,6 +312,7 @@ const estatus_infante={
 	leer: ["administrador", "profesor"],
 	crear: ["administrador"],
 	modificar: ["administrador"],
+
 	// RF-10: el código no se cambia al editar (las reglas de la API dependen de él).
 	validar: protegerCodigo,
 	alcance: ()=>sinFiltro
@@ -325,6 +325,7 @@ const cat_estado_asistencia={
 	leer: TODOS,
 	crear: ["administrador"],
 	modificar: ["administrador"],
+
 	// RF-10: el código no se cambia al editar (las reglas de la API dependen de él).
 	validar: protegerCodigo,
 	alcance: ()=>sinFiltro
@@ -339,6 +340,7 @@ const motivos_falta={
 	leer: TODOS,
 	crear: ["administrador"],
 	modificar: ["administrador"],
+
 	// RF-10: el código no se cambia al editar (las reglas de la API dependen de él).
 	validar: protegerCodigo,
 	alcance: ()=>sinFiltro
@@ -373,6 +375,8 @@ const justificaciones={
 		if(usuario.rol=="doctor_asesor") return {sql: "asistencia_id IN (SELECT id FROM asistencias WHERE estancia_id = ?)", valores: [usuario.estancia_id]};
 		return {sql: "tutor_id = ?", valores: [usuario.tutor_id]};
 	},
+
+	// Se utilizo IA para guiarnos como implementarlo y para saber como implementrlo en otros metodos mas adelante
 	// El comentario puede tener datos médicos: el profesor no lo recibe.
 	ocultas: {profesor: ["comentario"]},
 	validar: async (usuario, valores)=>{
@@ -403,6 +407,7 @@ const justificaciones={
 	}
 };
 
+// Seguimientos de faltas: llamadas, causas, fecha de retorno y alta médica.
 const seguimientos={
 	tabla: "seguimientos",
 	columnas: ["id", "asistencia_id", "responsable_id", "motivo_id", "causa", "registro_llamada",
@@ -411,6 +416,7 @@ const seguimientos={
 	leer: ["administrador", "doctor_asesor"],
 	crear: ["administrador", "doctor_asesor"],
 	modificar: ["administrador", "doctor_asesor"],
+	// rol "profesor" no puede ver ni crear seguimientos, pero sí ve la alerta en la bandeja de asistencias.
 	alcance: (usuario)=>{
 		if(usuario.rol=="administrador") return sinFiltro;
 		return {sql: "asistencia_id IN (SELECT id FROM asistencias WHERE estancia_id = ?)", valores: [usuario.estancia_id]};
@@ -433,6 +439,7 @@ const seguimientos={
 		}
 	}
 };
+
 
 // Vista del esquema: cifras por estancia y mes, sin nombres de niños.
 const reportes_asistencia={
@@ -517,9 +524,8 @@ const mi_asistencia={
 	}
 };
 
-// =====================================================================
-// Funciones genéricas (las mismas del profe, escritas en SQL)
-// =====================================================================
+
+// En esta parte utilizamos IA para guiarnos en la implementación de SQL , ya que el profesor lo hizo con MongoDB
 
 // NUEVO: columnas que este usuario puede recibir (quita las ocultas de su rol).
 function columnasVisibles(config, usuario){
@@ -588,6 +594,7 @@ async function getList(config, usuario, req, res){
 	res.json(data);
 }
 
+// En esta parte utilizamos IA para unos problemas que se tenían por lo que se corrigo algunos aspectos del profe.
 // Como el profe: varios registros por id (?id=1&id=2). Lo usan las referencias.
 async function getMany(config, usuario, req, res){
 	let alcance=config.alcance(usuario);
@@ -620,7 +627,7 @@ async function getOne(config, usuario, id, req, res){
 		[...alcance.valores, id]
 	);
 	if(data.length==0){
-		// NUEVO: 404 si no existe o si el rol no puede verlo.
+		// agregamos el error que hicimos al principio, 404 si no existe o si el rol no puede verlo.
 		throw errorHttp(404);
 	}
 	res.json(data[0]);
@@ -689,9 +696,7 @@ async function createData(config, usuario, req, res){
 	res.json({...valores, id: resultado.insertId});
 }
 
-// =====================================================================
 // Rutas
-// =====================================================================
 
 // De la API de Capi: comprobar que el servidor responde.
 app.get("/", (req, res)=>{
@@ -699,7 +704,6 @@ app.get("/", (req, res)=>{
 });
 
 // De la API de Capi: comprobar la conexión con la base de datos.
-// CORRECCIÓN: antes era pública y cualquiera podía ver el nombre de la base.
 // Ahora pide token (como las demás rutas) y solo la usa el administrador.
 app.get("/api/test-db", async (req, res)=>{
 	try{
@@ -712,15 +716,20 @@ app.get("/api/test-db", async (req, res)=>{
 	}
 });
 
-// NUEVO: el profe escribía las rutas de /Productos a mano. SIRAI tiene
+// Explicación de IA :
+//La carpeta mandada escribía las rutas de /Productos a mano. SIRAI tiene
 // 15 recursos, así que esta función escribe las mismas rutas para cada uno.
 // Hace exactamente lo que el profe hacía para /Productos:
 //   GET    /api/recurso      -> getList, getMany o getManyReference
 //   GET    /api/recurso/:id  -> getOne
 //   PUT    /api/recurso/:id  -> updateData   (si algún rol puede modificar)
 //   POST   /api/recurso      -> createData   (si algún rol puede crear)
+
+//Cosas que cambiamos
 // CORRECCIÓN DEL EJEMPLO: en el ejemplo, GET /:id, PUT y POST no revisaban el
 // token; cualquiera podía leer o cambiar datos. Aquí todas las rutas lo revisan.
+
+
 function registrarRutas(nombre, config){
 	// Como el profe: una ruta GET decide entre getList, getMany y getManyReference.
 	app.get("/api/"+nombre, async (req, res)=>{
@@ -778,26 +787,20 @@ function registrarRutas(nombre, config){
 	}
 }
 
-// Rutas propias que deben ir ANTES de registrarRutas, porque Express revisa
-// las rutas en orden y "/api/avisos_privacidad/:id" atraparía "vigente".
+// Hora de Corte y seguimiento de faltas
 
-// =====================================================================
-// Corte del pase de lista y seguimiento automático (RF-16 y RF-20)
-// =====================================================================
-
-// NUEVO: hora en que se cierra el pase de lista de cada turno (RN-02 del SRS).
+// hora en que se cierra el pase de lista de cada turno (RN-02 del SRS).
 // El SRS fija 09:00 para el matutino; 14:00 para el vespertino es decisión
 // del equipo. Se comparan como texto "HH:MM" con la hora de esta computadora.
 const HORA_CORTE_MATUTINO="09:00";
 const HORA_CORTE_VESPERTINO="14:00";
 
-// NUEVO: estados que cuentan como falta y generan un seguimiento (RN-03).
+//Estados de asistencia que significan que el niño no entró a la estancia y hay que hacer seguimiento.
 const ESTADOS_FALTA=["falta_justificada", "falta_injustificada", "licencia_medica"];
-
-// NUEVO: después del corte solo estos roles pueden corregir el pase de lista.
+// Solo el administrador y el doctor/asesor pueden corregir después del corte.
 const ROLES_CORRIGEN_DESPUES_DEL_CORTE=["administrador", "doctor_asesor"];
 
-// NUEVO: rellena con un cero a la izquierda: 7 -> "07".
+// sirve para poner un cero delante de los números de un dígito (mes, día, hora, minuto). Se necesita para que la fecha y hora se comparen como texto.
 function dosDigitos(numero){
 	if(numero<10){
 		return "0"+numero;
@@ -805,13 +808,13 @@ function dosDigitos(numero){
 	return String(numero);
 }
 
-// NUEVO: fecha de hoy como "2026-10-21", con la hora local (no UTC).
+// Se utiliza para introducir la fecha de hoy en los filtros de la bandeja de seguimientos y en el pase de lista.
+// https://marmelab.com/react-admin/TimeInput.html
 function fechaHoy(){
 	let ahora=new Date();
 	return ahora.getFullYear()+"-"+dosDigitos(ahora.getMonth()+1)+"-"+dosDigitos(ahora.getDate());
 }
 
-// NUEVO: hora actual como "08:45".
 function horaActual(){
 	let ahora=new Date();
 	return dosDigitos(ahora.getHours())+":"+dosDigitos(ahora.getMinutes());
@@ -824,7 +827,6 @@ function horaCorte(turno){
 	return HORA_CORTE_VESPERTINO;
 }
 
-// NUEVO: true si el pase de lista de esa fecha y turno ya cerró.
 // Los textos "AAAA-MM-DD" y "HH:MM" se pueden comparar con < y >=.
 function turnoCerrado(fecha, turno){
 	let hoy=fechaHoy();
@@ -841,6 +843,8 @@ function turnoCerrado(fecha, turno){
 // cerrado que todavía no tenga uno. La llave única de seguimientos
 // (asistencia_id) y el NOT EXISTS evitan duplicados aunque se llame
 // muchas veces. Devuelve cuántos seguimientos creó.
+// En las partes de SQL se hizo con apoyo de IA 
+
 async function generarSeguimientos(){
 	let hoy=fechaHoy();
 	// Turnos de HOY que ya pasaron su hora de corte.
@@ -873,6 +877,8 @@ async function generarSeguimientos(){
 
 // NUEVO: pase de lista de todo el grupo en un solo envío (PaseLista.tsx).
 // Usa una transacción: o se guardan todos los niños o ninguno.
+// Endpoint: POST /api/asistencias/lote
+// Se utilizo IA para endpoints
 app.post("/api/asistencias/lote", async (req, res)=>{
 	let conexion;
 	try{
@@ -1113,11 +1119,6 @@ registrarRutas("mi_historial", mi_historial);
 registrarRutas("movimientos", movimientos);
 registrarRutas("padron_mensual", padron_mensual);
 
-// NUEVO: no hay rutas DELETE. El profe borraba registros; en SIRAI se usa baja
-// lógica (activo = FALSE) y nadie tiene permiso "delete" en src/permisos.ts.
-
-// NUEVO: no hay ruta /registrarse. En SIRAI el administrador crea los usuarios
-// (POST /api/usuarios) y el primero se crea con "node crearAdmin.js".
 
 // Como el profe: /login con usuario y contraseña.
 app.post("/api/login", async (req, res)=>{
@@ -1125,17 +1126,19 @@ app.post("/api/login", async (req, res)=>{
 		let user=req.body.username;
 		let pass=req.body.password;
 		// NUEVO: el usuario es el correo, y se une con roles para obtener el código del rol.
+		// Esto con fin de que el token guarde el rol y el alcance (estancia, sala, tutor) del usuario.
 		let [filas]=await db.query(
 			"SELECT u.id, u.nombre, u.password_hash, u.estancia_id, u.sala_id, u.tutor_id, r.codigo AS rol "+
 			"FROM usuarios u JOIN roles r ON u.rol_id = r.id WHERE u.correo = ? AND u.activo = TRUE",
 			[user]
 		);
+
+
 		let data=filas[0];
 		if(data==null){
 			res.status(401).json({message: "Usuario o contraseña incorrectos."});
-		// CORRECCIÓN DEL EJEMPLO: el profe escribió argon2.verify(...) sin await.
-		// verify devuelve una promesa, y una promesa siempre cuenta como verdadera,
-		// así que el ejemplo aceptaba CUALQUIER contraseña. Con await se revisa de verdad.
+			// Integramos un await, por que en el del profe no estaba y luego aeptaba cualquier contraseña aunque el usuario no existiera.
+
 		}else if(await argon2.verify(data.password_hash, String(pass))){
 			// NUEVO: el token guarda también el rol y el alcance (estancia, sala, tutor)
 			// para que cada ruta sepa qué puede ver este usuario.
@@ -1174,6 +1177,7 @@ const options = {
 };
 
 // NUEVO: revisa el corte una vez. Si algo falla, lo anota y la API sigue.
+// Esta es para el corte y seguimiento de faltas, que se hace al arrancar y cada minuto (setInterval).
 async function revisarCorte(){
 	try{
 		let creados=await generarSeguimientos();
