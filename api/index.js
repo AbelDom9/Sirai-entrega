@@ -262,7 +262,7 @@ const infante_tutor={
 // Para esta parte nos guiamos con IA para la implementación del algoritmo de seguridad.
 // Para crear o cambiar la contraseña, el formulario manda "password" y aquí
 // se guarda cifrada con argon2 (como /registrarse del profe).
-// Se utilizo el estandar OWASP, se utilizaron los 10 principios mas importantes
+// Se siguió el Password Storage Cheat Sheet de OWASP: argon2id con parámetros por encima del mínimo recomendado
 const usuarios={
 	tabla: "usuarios",
 	columnas: ["id", "nombre", "correo", "rol_id", "estancia_id", "sala_id", "tutor_id", "activo"],
